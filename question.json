@@ -292,5 +292,59 @@
     "correct": "Sử dụng cảm biến và AI để nhận diện chướng ngại vật",
     "wrong": ["Nhờ vào sự điều khiển của con người từ xa", "Nhờ vào việc di chuyển ngẫu nhiên", "Nhờ vào việc đọc bản đồ vẽ sẵn trên sàn"],
     "explanation": "Robot sử dụng AI để phân tích dữ liệu từ cảm biến và ra quyết định rẽ hướng."
+  },
+  {
+    "question": "Hệ thống gợi ý video trên YouTube hay TikTok hoạt động nhờ đâu?",
+    "correct": "AI phân tích sở thích của bạn từ lịch sử xem",
+    "wrong": ["Do nhân viên YouTube tự chọn video cho bạn", "Do máy tính chọn ngẫu nhiên các video", "Do nhà mạng internet quyết định"],
+    "explanation": "AI theo dõi những gì bạn thích xem để đề xuất các video tương tự, giúp bạn ở lại ứng dụng lâu hơn."
+  },
+  {
+    "question": "AI có thể 'cảm thấy' buồn hay vui giống con người không?",
+    "correct": "Không, AI chỉ mô phỏng cảm xúc qua ngôn ngữ",
+    "wrong": ["Có, nếu AI được huấn luyện đủ lâu", "Có, vì AI có bộ não điện tử", "Không, vì AI không có điện"],
+    "explanation": "AI không có cảm xúc thật; nó chỉ dùng dữ liệu để viết ra những câu nói trông giống như đang có cảm xúc."
+  },
+  {
+    "question": "Vì sao AI lại được gọi là 'Nhân tạo'?",
+    "correct": "Vì nó do con người tạo ra, không phải tự nhiên",
+    "wrong": ["Vì nó làm bằng nhựa và kim loại", "Vì nó không biết nói tiếng người", "Vì nó chỉ hoạt động trong phòng thí nghiệm"],
+    "explanation": " 'Nhân tạo' nghĩa là do con người xây dựng nên, trái ngược với trí thông minh tự nhiên của con người và động vật."
+  },
+  {
+    "question": "Thiết bị nào sau đây KHÔNG sử dụng AI?",
+    "correct": "Một chiếc quạt điện bấm nút thông thường",
+    "wrong": ["Một chiếc loa thông minh", "Một chiếc điện thoại có nhận diện khuôn mặt", "Một chiếc máy hút bụi tự động"],
+    "explanation": "Quạt điện thông thường hoạt động theo mạch điện cơ bản, không có khả năng học hay suy luận."
+  },
+  {
+    "question": "AI giúp con người làm việc hiệu quả hơn bằng cách nào?",
+    "correct": "Tự động hóa các công việc lặp lại nhàm chán",
+    "wrong": ["Làm thay mọi việc để con người không cần học", "Thay thế toàn bộ tình cảm con người", "Loại bỏ mọi sai sót trong cuộc sống"],
+    "explanation": "AI rất giỏi làm những việc lặp đi lặp lại nhanh và chính xác, giúp con người tập trung vào việc sáng tạo."
+  },
+  {
+    "question": "AI 'thông minh' nhất hiện nay vẫn thiếu khả năng gì so với người?",
+    "correct": "Sự thấu cảm và ý thức thực sự về bản thân",
+    "wrong": ["Khả năng tính toán các con số lớn", "Khả năng ghi nhớ hàng tỷ trang sách", "Khả năng dịch thuật nhiều ngôn ngữ"],
+    "explanation": "AI có thể xử lý dữ liệu cực nhanh nhưng không thể thực sự thấu hiểu cảm xúc hay có ý thức như con người."
+  },
+  {
+    "question": "Trong Machine Learning, 'dữ liệu gán nhãn' (labeled data) là gì?",
+    "correct": "Dữ liệu đã được đánh dấu tên hoặc phân loại",
+    "wrong": ["Dữ liệu được lưu trong nhãn dán", "Dữ liệu bị lỗi và cần xóa bỏ", "Dữ liệu được mã hóa bằng mật khẩu"],
+    "explanation": "Ví dụ: Một bức ảnh con chó được ghi nhãn là 'Chó' để AI biết đó là gì khi học."
+  },
+  {
+    "question": "Điều gì xảy ra khi AI gặp một dữ liệu hoàn toàn mới chưa từng học?",
+    "correct": "AI sẽ đưa ra dự đoán dựa trên những gì gần giống nhất",
+    "wrong": ["AI sẽ lập tức bị hỏng và ngừng chạy", "AI sẽ tự động biết chính xác 100% là gì", "AI sẽ yêu cầu con người cài đặt lại từ đầu"],
+    "explanation": "AI hoạt động bằng cách so sánh dữ liệu mới với các quy luật nó đã học để đưa ra phán đoán."
+  },
+  {
+    "question": "Tại sao việc chia nhỏ dữ liệu thành 'tập huấn luyện' và 'tập kiểm tra' lại cần thiết?",
+    "correct": "Để kiểm tra xem AI học có chính xác không",
+    "wrong": ["Để tiết kiệm bộ nhớ cho máy tính", "Để AI không bị quá tải khi làm việc", "Để chia cho nhiều người cùng huấn luyện"],
+    "explanation": "Ta dùng tập huấn luyện để AI học, và dùng tập kiểm tra (dữ liệu AI chưa thấy) để đánh giá năng lực thực tế của nó."
   }
 ]
