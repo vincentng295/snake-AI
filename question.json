@@ -1,0 +1,296 @@
+[
+  {
+    "question": "Trí tuệ nhân tạo (AI) là gì?",
+    "correct": "Khả năng máy tính mô phỏng trí thông minh con người",
+    "wrong": ["Một loại robot biết đi và nói", "Một phần mềm diệt virus máy tính", "Một hệ điều hành mới cho điện thoại"],
+    "explanation": "AI là công nghệ giúp máy tính có thể học, suy luận và giải quyết vấn đề như con người."
+  },
+  {
+    "question": "Ví dụ nào sau đây là AI trong điện thoại thông minh?",
+    "correct": "Trợ lý ảo như Siri hoặc Google Assistant",
+    "wrong": ["Ứng dụng Máy tính (Calculator)", "Đèn flash của camera", "Chuông báo thức"],
+    "explanation": "Các trợ lý ảo sử dụng AI để hiểu giọng nói và trả lời câu hỏi của bạn."
+  },
+  {
+    "question": "Điểm khác biệt lớn nhất giữa AI và phần mềm thông thường là gì?",
+    "correct": "AI có khả năng học từ dữ liệu để cải thiện",
+    "wrong": ["AI chạy nhanh hơn phần mềm", "AI không cần điện để hoạt động", "Phần mềm thông thường đắt tiền hơn"],
+    "explanation": "Phần mềm thường chạy theo quy tắc cố định, còn AI tự rút ra quy luật từ dữ liệu."
+  },
+  {
+    "question": "AI có thể giúp con người làm việc gì tốt nhất?",
+    "correct": "Xử lý lượng dữ liệu khổng lồ trong thời gian ngắn",
+    "wrong": ["Thay thế hoàn toàn cảm xúc của con người", "Yêu thương và quan tâm bạn bè", "Tự tạo ra ý thức như con người"],
+    "explanation": "Máy tính xử lý con số và thông tin cực nhanh, điều mà con người mất nhiều thời gian hơn."
+  },
+  {
+    "question": "Mục tiêu chính của việc phát triển AI là gì?",
+    "correct": "Hỗ trợ con người làm việc hiệu quả và thông minh hơn",
+    "wrong": ["Để robot thống trị thế giới", "Để con người không cần học tập nữa", "Để thay thế tất cả mọi công việc"],
+    "explanation": "AI được tạo ra như một công cụ để giúp cuộc sống con người tiện lợi và năng suất hơn."
+  },
+  {
+    "question": "AI 'tư duy' dựa trên điều gì?",
+    "correct": "Tìm kiếm các quy luật (pattern) trong dữ liệu",
+    "wrong": ["Sử dụng phép thuật", "Có linh hồn giống con người", "Đọc suy nghĩ trong đầu người dùng"],
+    "explanation": "AI phân tích hàng triệu ví dụ để tìm ra điểm chung và đưa ra dự đoán."
+  },
+  {
+    "question": "Dữ liệu (data) trong AI là gì?",
+    "correct": "Thông tin như văn bản, hình ảnh, con số, âm thanh",
+    "wrong": ["Một loại linh kiện điện tử", "Một sợi dây cáp kết nối internet", "Một loại pin cho robot"],
+    "explanation": "Dữ liệu là nguyên liệu đầu vào để AI học tập và hoạt động."
+  },
+  {
+    "question": "Để AI nhận diện được quả táo, ta cần cung cấp gì?",
+    "correct": "Hàng ngàn bức ảnh về nhiều loại quả táo khác nhau",
+    "wrong": ["Một bản mô tả chi tiết bằng văn bản", "Một chiếc máy ảnh thật đắt tiền", "Một danh sách tên các loại quả"],
+    "explanation": "AI học nhận diện hình ảnh bằng cách xem nhiều ví dụ thực tế qua ảnh."
+  },
+  {
+    "question": "Quá trình 'huấn luyện' (training) AI nghĩa là gì?",
+    "correct": "Cho AI học từ dữ liệu để tìm ra quy luật",
+    "wrong": ["Dạy AI cách tập thể dục mỗi ngày", "Cài đặt phần mềm diệt virus cho AI", "Viết lại toàn bộ mã nguồn của máy tính"],
+    "explanation": "Huấn luyện là quá trình cung cấp dữ liệu để AI tự điều chỉnh và trở nên chính xác hơn."
+  },
+  {
+    "question": "Điều gì xảy ra nếu dữ liệu dùng để huấn luyện AI bị sai?",
+    "correct": "AI sẽ đưa ra kết quả sai hoặc không chính xác",
+    "wrong": ["AI sẽ tự động sửa lại dữ liệu cho đúng", "Máy tính sẽ bị hỏng phần cứng", "AI sẽ ngừng hoạt động hoàn toàn"],
+    "explanation": "AI học từ những gì nó được cung cấp, nên dữ liệu sai sẽ dẫn đến kết quả sai."
+  },
+  {
+    "question": "Tại sao AI cần nhiều dữ liệu chất lượng cao?",
+    "correct": "Để nhận diện chính xác hơn và ít mắc lỗi hơn",
+    "wrong": ["Để làm cho máy tính chạy nhanh hơn", "Để tiết kiệm pin cho thiết bị", "Để tăng dung lượng ổ cứng"],
+    "explanation": "Càng nhiều ví dụ chính xác, AI càng dễ dàng tìm ra quy luật đúng."
+  },
+  {
+    "question": "Học máy (Machine Learning) là gì?",
+    "correct": "Một nhánh của AI giúp máy tính tự học từ dữ liệu",
+    "wrong": ["Việc con người học cách sử dụng máy tính", "Cách lắp ráp các linh kiện máy tính", "Một loại máy học tiếng Anh tự động"],
+    "explanation": "Machine Learning cho phép máy tính cải thiện khả năng mà không cần lập trình chi tiết từng bước."
+  },
+  {
+    "question": "Công nghệ nhận diện khuôn mặt (FaceID) thuộc lĩnh vực nào?",
+    "correct": "Thị giác máy tính (Computer Vision)",
+    "wrong": ["Xử lý ngôn ngữ tự nhiên", "Điều khiển robot từ xa", "Lập trình trang web"],
+    "explanation": "Thị giác máy tính giúp AI 'nhìn' và hiểu nội dung từ hình ảnh hoặc video."
+  },
+  {
+    "question": "Việc dịch một câu từ tiếng Anh sang tiếng Việt là ứng dụng của?",
+    "correct": "Xử lý ngôn ngữ tự nhiên (NLP)",
+    "wrong": ["Thị giác máy tính", "Nhận diện vân tay", "Điều khiển xe tự lái"],
+    "explanation": "NLP (Natural Language Processing) là AI giúp máy tính hiểu và xử lý ngôn ngữ con người."
+  },
+  {
+    "question": "AI nhận diện một con mèo trong ảnh bằng cách nào?",
+    "correct": "Tìm các đặc điểm như tai nhọn, râu, hình dáng mắt",
+    "wrong": ["Đọc nhãn dán ghi chữ 'con mèo' trên ảnh", "Hỏi người dùng xem đây là con gì", "Quét xem ảnh đó được chụp khi nào"],
+    "explanation": "AI phân tích các điểm ảnh để tìm ra các đặc điểm đặc trưng của đối tượng."
+  },
+  {
+    "question": "Loa thông minh nhận ra giọng nói của bạn nhờ công nghệ nào?",
+    "correct": "Nhận dạng giọng nói (Speech Recognition)",
+    "wrong": ["Quét võng mạc mắt", "Đọc suy nghĩ từ xa", "Nhận diện hình ảnh"],
+    "explanation": "Công nghệ này chuyển đổi sóng âm thanh thành dữ liệu mà AI có thể hiểu được."
+  },
+  {
+    "question": "Bước đầu tiên để AI hiểu được giọng nói con người là gì?",
+    "correct": "Chuyển âm thanh thành dữ liệu số",
+    "wrong": ["Dịch âm thanh sang tiếng nước ngoài", "Lưu âm thanh vào ổ cứng", "Phát lại âm thanh đó thật to"],
+    "explanation": "Máy tính không nghe được âm thanh như ta, nó cần chuyển âm thanh thành các con số."
+  },
+  {
+    "question": "Tại sao AI đôi khi không hiểu được lời nói của một số vùng miền?",
+    "correct": "Vì dữ liệu huấn luyện thiếu giọng nói vùng miền đó",
+    "wrong": ["Vì loa của máy tính bị hỏng", "Vì người nói nói quá chậm", "Vì AI không thích vùng miền đó"],
+    "explanation": "Nếu AI không được học nhiều ví dụ về một chất giọng, nó sẽ khó nhận diện chính xác."
+  },
+  {
+    "question": "Chatbot là gì?",
+    "correct": "Một chương trình AI có thể trò chuyện với con người",
+    "wrong": ["Một loại robot biết nấu ăn", "Một ứng dụng dùng để gọi điện thoại", "Một trò chơi giải đố trên máy tính"],
+    "explanation": "Chatbot mô phỏng cuộc hội thoại giữa người và máy thông qua văn bản hoặc giọng nói."
+  },
+  {
+    "question": "AI tạo sinh (Generative AI) có khả năng làm gì?",
+    "correct": "Tạo ra nội dung mới như văn bản, hình ảnh, âm nhạc",
+    "wrong": ["Chỉ có thể tìm kiếm thông tin trên Google", "Quét virus cho máy tính", "Tăng tốc độ internet"],
+    "explanation": "AI tạo sinh không chỉ phân tích mà còn có thể 'sáng tạo' ra nội dung mới."
+  },
+  {
+    "question": "Trong AI, 'Prompt' (Câu lệnh) là gì?",
+    "correct": "Yêu cầu hoặc hướng dẫn ta nhập vào để AI thực hiện",
+    "wrong": ["Một mật khẩu để mở khóa AI", "Một lỗi phần mềm khiến AI dừng chạy", "Tên của một loại AI nổi tiếng"],
+    "explanation": "Prompt là cách chúng ta giao tiếp và ra lệnh cho AI làm việc."
+  },
+  {
+    "question": "Cách nào sau đây giúp viết prompt hiệu quả hơn?",
+    "correct": "Cung cấp yêu cầu rõ ràng, chi tiết và cụ thể",
+    "wrong": ["Viết câu lệnh thật ngắn, chỉ một từ", "Sử dụng nhiều ký tự đặc biệt", "Viết bằng ngôn ngữ bí mật"],
+    "explanation": "AI hoạt động tốt hơn khi nó hiểu rõ bối cảnh và mong muốn cụ thể của người dùng."
+  },
+  {
+    "question": "Vì sao AI tạo sinh đôi khi đưa ra thông tin sai nhưng rất tự tin?",
+    "correct": "Vì nó dự đoán từ tiếp theo theo xác suất, không phải sự thật",
+    "wrong": ["Vì nó muốn lừa dối con người", "Vì nó bị nhiễm virus máy tính", "Vì nó không có kết nối internet"],
+    "explanation": "Hiện tượng này gọi là 'ảo giác', AI ghép các từ lại cho hợp lý về ngữ pháp nhưng chưa chắc đúng sự thật."
+  },
+  {
+    "question": "Sự khác biệt giữa tìm kiếm Google và AI tạo sinh là gì?",
+    "correct": "Google tìm trang web có sẵn, AI tạo ra câu trả lời mới",
+    "wrong": ["Google chậm hơn AI", "Google không dùng AI, còn AI tạo sinh thì có", "Google chỉ tìm được hình ảnh, AI chỉ tìm được chữ"],
+    "explanation": "Google dẫn bạn đến nguồn tin, còn AI tạo sinh tổng hợp thông tin để viết thành câu trả lời."
+  },
+  {
+    "question": "Thuật toán (Algorithm) là gì?",
+    "correct": "Một tập hợp các bước hướng dẫn cụ thể để giải quyết vấn đề",
+    "wrong": ["Một loại ngôn ngữ lập trình khó nhất", "Một bộ phận phần cứng trong CPU", "Một loại virus máy tính"],
+    "explanation": "Thuật toán giống như một công thức nấu ăn, làm theo từng bước sẽ ra kết quả."
+  },
+  {
+    "question": "Ví dụ nào trong đời sống là một thuật toán?",
+    "correct": "Các bước thực hiện một bài toán theo hướng dẫn",
+    "wrong": ["Việc ngắm nhìn một bức tranh", "Cảm giác khi ăn một món ngon", "Việc mơ một giấc mơ"],
+    "explanation": "Bất cứ quy trình nào có các bước rõ ràng (Bước 1, Bước 2...) đều là thuật toán."
+  },
+  {
+    "question": "Thuật toán sắp xếp trong máy tính dùng để làm gì?",
+    "correct": "Sắp xếp dữ liệu theo một thứ tự nhất định (ví dụ A-Z)",
+    "wrong": ["Để xóa các tệp tin không cần thiết", "Để tăng dung lượng bộ nhớ", "Để thay đổi màu sắc màn hình"],
+    "explanation": "Sắp xếp giúp việc tìm kiếm thông tin trở nên nhanh chóng và dễ dàng hơn."
+  },
+  {
+    "question": "Tại sao thuật toán lại quan trọng đối với AI?",
+    "correct": "Vì nó quy định cách AI xử lý dữ liệu để ra kết quả",
+    "wrong": ["Vì nó làm cho AI có cảm xúc", "Vì nó giúp AI không cần dùng điện", "Vì nó là tên gọi khác của dữ liệu"],
+    "explanation": "Thuật toán là 'bộ não' điều khiển cách AI học và suy luận từ dữ liệu."
+  },
+  {
+    "question": "Nhận diện quy luật (Pattern Recognition) là gì?",
+    "correct": "Tìm ra những điểm tương đồng giữa các dữ liệu",
+    "wrong": ["Việc ghi nhớ mọi chi tiết của dữ liệu", "Xóa bỏ những dữ liệu giống nhau", "Thay đổi dữ liệu thành con số"],
+    "explanation": "Đây là khả năng nhìn ra điểm chung, ví dụ: mọi con chim đều có cánh."
+  },
+  {
+    "question": "Điều gì xảy ra nếu một thuật toán có lỗi (bug)?",
+    "correct": "Kết quả trả về bị sai hoặc chương trình bị dừng",
+    "wrong": ["Máy tính sẽ tự động nâng cấp lên phiên bản mới", "Thuật toán sẽ tự biến mất", "Màn hình máy tính sẽ đổi màu"],
+    "explanation": "Một sai sót nhỏ trong các bước của thuật toán sẽ dẫn đến kết quả không mong muốn."
+  },
+  {
+    "question": "Deepfake là gì?",
+    "correct": "Video hoặc âm thanh giả mạo trông như thật nhờ AI",
+    "wrong": ["Một loại trò chơi điện tử 3D", "Một ứng dụng chỉnh sửa ảnh làm đẹp", "Một loại phim hoạt hình"],
+    "explanation": "Deepfake sử dụng AI để thay thế khuôn mặt hoặc giọng nói của một người vào video khác."
+  },
+  {
+    "question": "AI có luôn công bằng với tất cả mọi người không?",
+    "correct": "Không, AI có thể bị thiên vị tùy vào dữ liệu học",
+    "wrong": ["Có, AI là máy móc nên luôn công bằng tuyệt đối", "Có, vì AI không có cảm xúc", "Không, vì AI thường ghét con người"],
+    "explanation": "Nếu dữ liệu đầu vào bị thiên lệch, AI sẽ học theo sự thiên lệch đó."
+  },
+  {
+    "question": "Hiện tượng 'thiên vị dữ liệu' (data bias) xảy ra khi nào?",
+    "correct": "Khi dữ liệu huấn luyện không đại diện đủ cho thực tế",
+    "wrong": ["Khi máy tính bị quá nóng khi chạy AI", "Khi người dùng nhập sai câu lệnh", "Khi AI được cập nhật phiên bản mới"],
+    "explanation": "Ví dụ: AI học nhận diện khuôn mặt nhưng chỉ dùng ảnh người da trắng, nó sẽ khó nhận diện người da màu."
+  },
+  {
+    "question": "Tại sao AI tạo sinh gây tranh cãi về bản quyền?",
+    "correct": "Vì nó học từ tác phẩm của nghệ sĩ mà không xin phép",
+    "wrong": ["Vì nó tạo ra quá nhiều hình ảnh đẹp", "Vì nó không biết vẽ hình tròn", "Vì nó chỉ tạo ra hình ảnh màu đen trắng"],
+    "explanation": "Nhiều AI được huấn luyện trên hàng triệu bức ảnh của nghệ sĩ mà họ không được trả phí."
+  },
+  {
+    "question": "Làm sao để nhận biết một video Deepfake đơn giản?",
+    "correct": "Quan sát các chi tiết bất thường như nháy mắt, mép môi",
+    "wrong": ["Xem video đó có dài hay không", "Kiểm tra xem video có âm thanh hay không", "Nhìn xem video có màu sắc rực rỡ không"],
+    "explanation": "Deepfake dù tinh vi nhưng thường có những lỗi nhỏ ở vùng chuyển động của khuôn mặt."
+  },
+  {
+    "question": "Vì sao sự minh bạch (transparency) trong AI lại quan trọng?",
+    "correct": "Để con người hiểu tại sao AI lại đưa ra quyết định đó",
+    "wrong": ["Để AI có thể nhìn xuyên thấu mọi vật", "Để làm cho mã nguồn của AI ngắn hơn", "Để AI chạy nhanh hơn trên điện thoại"],
+    "explanation": "Khi biết cách AI ra quyết định, ta có thể kiểm tra xem nó có đúng hay công bằng không."
+  },
+  {
+    "question": "Bạn có nên chia sẻ mật khẩu cá nhân cho một chatbot AI?",
+    "correct": "Không, vì thông tin có thể bị lưu trữ và rò rỉ",
+    "wrong": ["Có, vì AI sẽ giữ bí mật giúp bạn", "Có, vì AI cần mật khẩu để bảo vệ bạn", "Có, nếu chatbot đó trông thân thiện"],
+    "explanation": "Thông tin bạn nhập vào AI thường được lưu lại để huấn luyện, gây nguy cơ lộ bí mật."
+  },
+  {
+    "question": "Khi AI đưa ra một câu trả lời, bạn nên làm gì?",
+    "correct": "Kiểm tra lại thông tin từ các nguồn đáng tin cậy",
+    "wrong": ["Tin tưởng hoàn toàn vì AI thông minh hơn người", "Xóa ngay câu trả lời đó đi", "Chia sẻ ngay lên mạng xã hội"],
+    "explanation": "AI có thể nhầm lẫn, việc đối chiếu thông tin là rất quan trọng."
+  },
+  {
+    "question": "Tại sao không nên phụ thuộc hoàn toàn vào AI để làm bài tập?",
+    "correct": "Vì bạn sẽ mất khả năng tư duy và tự giải quyết vấn đề",
+    "wrong": ["Vì AI sẽ thu phí khi bạn làm bài quá nhiều", "Vì AI không biết làm toán", "Vì giáo viên không thích máy tính"],
+    "explanation": "Học tập là quá trình rèn luyện não bộ, dùng AI làm hộ sẽ khiến bạn không tiến bộ."
+  },
+  {
+    "question": "Thông tin nào sau đây được gọi là 'dữ liệu cá nhân nhạy cảm'?",
+    "correct": "Số căn cước công dân, địa chỉ nhà, mật khẩu",
+    "wrong": ["Tên một loài hoa bạn thích", "Màu sắc yêu thích của bạn", "Món ăn bạn muốn ăn trưa nay"],
+    "explanation": "Đây là những thông tin nếu bị lộ sẽ gây nguy hiểm hoặc bị kẻ xấu lợi dụng."
+  },
+  {
+    "question": "Nguy cơ của việc 'quá phụ thuộc' vào AI là gì?",
+    "correct": "Giảm khả năng suy nghĩ phản biện và sáng tạo",
+    "wrong": ["Khiến cho máy tính bị nhanh hỏng hơn", "Làm cho internet bị chậm lại", "Khiến cho pin điện thoại nhanh hết"],
+    "explanation": "Khi mọi câu trả lời đều có sẵn, chúng ta sẽ lười đặt câu hỏi và nghi ngờ vấn đề."
+  },
+  {
+    "question": "Cách tốt nhất để bảo vệ quyền riêng tư khi dùng AI là gì?",
+    "correct": "Không nhập thông tin cá nhân chi tiết vào câu lệnh",
+    "wrong": ["Tắt máy tính sau khi dùng AI", "Sử dụng AI trong phòng kín", "Đặt tên giả cho máy tính"],
+    "explanation": "Cách an toàn nhất là không cung cấp dữ liệu nhạy cảm cho các hệ thống AI công cộng."
+  },
+  {
+    "question": "AI giúp ích gì cho bác sĩ trong y tế?",
+    "correct": "Hỗ trợ phân tích ảnh X-quang để phát hiện bệnh sớm",
+    "wrong": ["Thay thế bác sĩ thực hiện mọi ca phẫu thuật", "Tự động chữa khỏi mọi bệnh mà không cần thuốc", "Thay thế hoàn toàn việc khám bệnh"],
+    "explanation": "AI là công cụ hỗ trợ đắc lực giúp bác sĩ chẩn đoán chính xác và nhanh hơn."
+  },
+  {
+    "question": "Xe tự lái sử dụng AI để làm gì?",
+    "correct": "Nhận diện vật cản và điều khiển xe an toàn",
+    "wrong": ["Tự động mua xăng khi hết", "Hát cho hành khách nghe", "Thay đổi màu sắc xe theo tâm trạng"],
+    "explanation": "Xe tự lái dùng camera và cảm biến (thị giác máy tính) để hiểu môi trường xung quanh."
+  },
+  {
+    "question": "AI giúp nông dân như thế nào?",
+    "correct": "Phân tích độ ẩm, sâu bệnh để tưới nước và bón phân",
+    "wrong": ["Thay thế hoàn toàn việc trồng cây", "Khiến cây cối lớn nhanh trong một ngày", "Tự động thu hoạch cây mà không cần máy móc"],
+    "explanation": "AI giúp nông nghiệp chính xác hơn, giảm lãng phí và tăng năng suất."
+  },
+  {
+    "question": "Trong game, AI thường được dùng để làm gì?",
+    "correct": "Điều khiển nhân vật máy (NPC) hành động thông minh",
+    "wrong": ["Để làm cho game chạy không cần điện", "Để tự động nạp tiền vào tài khoản", "Để thay đổi toàn bộ cốt truyện game"],
+    "explanation": "AI tạo ra các đối thủ hoặc nhân vật trong game có khả năng phản ứng linh hoạt."
+  },
+  {
+    "question": "AI thay đổi cách học tập của học sinh như thế nào?",
+    "correct": "Cung cấp lộ trình học phù hợp với năng lực mỗi người",
+    "wrong": ["Viết bài văn giúp học sinh để không cần học", "Thay thế hoàn toàn vai trò của thầy cô", "Khiến học sinh không cần đọc sách nữa"],
+    "explanation": "AI có thể nhận ra bạn yếu chỗ nào để đưa ra bài tập rèn luyện đúng chỗ đó."
+  },
+  {
+    "question": "Khi AI làm thay các công việc lặp đi lặp lại, con người nên làm gì?",
+    "correct": "Phát triển kỹ năng sáng tạo và tư duy phản biện",
+    "wrong": ["Ngừng học tập vì máy tính đã làm hết", "Học cách làm việc giống như máy tính", "Chờ đợi AI làm hết mọi việc trong đời"],
+    "explanation": "Sáng tạo và thấu cảm là những điều AI khó có thể thay thế được con người."
+  },
+  {
+    "question": "Một robot hút bụi tự động tránh vật cản nhờ vào điều gì?",
+    "correct": "Sử dụng cảm biến và AI để nhận diện chướng ngại vật",
+    "wrong": ["Nhờ vào sự điều khiển của con người từ xa", "Nhờ vào việc di chuyển ngẫu nhiên", "Nhờ vào việc đọc bản đồ vẽ sẵn trên sàn"],
+    "explanation": "Robot sử dụng AI để phân tích dữ liệu từ cảm biến và ra quyết định rẽ hướng."
+  }
+]
