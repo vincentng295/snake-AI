@@ -346,5 +346,305 @@
     "correct": "Để kiểm tra xem AI học có chính xác không",
     "wrong": ["Để tiết kiệm bộ nhớ cho máy tính", "Để AI không bị quá tải khi làm việc", "Để chia cho nhiều người cùng huấn luyện"],
     "explanation": "Ta dùng tập huấn luyện để AI học, và dùng tập kiểm tra (dữ liệu AI chưa thấy) để đánh giá năng lực thực tế của nó."
+  },
+  {
+    "question": "AI 'hẹp' (Narrow AI) là loại AI có đặc điểm gì?",
+    "correct": "Chỉ thực hiện tốt một nhiệm vụ cụ thể",
+    "wrong": ["Có thể làm mọi việc như con người", "Có cảm xúc và ý thức riêng", "Không cần dữ liệu để hoạt động"],
+    "explanation": "Hầu hết AI hiện nay là AI hẹp, ví dụ như AI chỉ biết chơi cờ hoặc chỉ biết dịch thuật."
+  },
+  {
+    "question": "Vì sao AI trong máy lọc không khí được coi là thông minh?",
+    "correct": "Vì nó tự điều chỉnh mức gió dựa trên chất lượng khí",
+    "wrong": ["Vì nó có thể nói chuyện với người dùng", "Vì nó có màu sắc đẹp mắt", "Vì nó chạy bằng điện"],
+    "explanation": "AI giúp thiết bị tự ra quyết định dựa trên dữ liệu từ cảm biến môi trường."
+  },
+  {
+    "question": "Sự khác biệt giữa máy tính bỏ túi và AI là gì?",
+    "correct": "Máy tính bỏ túi tính theo công thức, AI học từ dữ liệu",
+    "wrong": ["Máy tính bỏ túi không dùng điện", "AI tính toán nhanh hơn máy tính bỏ túi", "Máy tính bỏ túi đắt tiền hơn AI"],
+    "explanation": "Máy tính bỏ túi làm theo lệnh cố định, còn AI có thể tự cải thiện khả năng thông qua học tập."
+  },
+  {
+    "question": "AI giúp Facebook hay Instagram hiển thị bài viết theo thứ tự nào?",
+    "correct": "Theo mức độ quan tâm và sở thích của người dùng",
+    "wrong": ["Theo thứ tự bảng chữ cái tên người đăng", "Theo thứ tự ngẫu nhiên hoàn toàn", "Theo thời gian đăng từ cũ nhất đến mới nhất"],
+    "explanation": "AI phân tích hành vi của bạn để ưu tiên hiển thị những nội dung bạn thích xem nhất."
+  },
+  {
+    "question": "Một hệ thống AI được gọi là 'thông minh' khi nào?",
+    "correct": "Khi nó có khả năng giải quyết vấn đề một cách hiệu quả",
+    "wrong": ["Khi nó có hình dáng giống con người", "Khi nó được cài đặt trên máy tính đắt tiền", "Khi nó có thể chạy rất nhanh"],
+    "explanation": "Trí thông minh của AI nằm ở khả năng xử lý thông tin để đưa ra kết quả đúng."
+  },
+  {
+    "question": "Trong lịch sử AI, việc chuyển từ 'lập trình quy tắc' sang 'học máy' có ý nghĩa gì?",
+    "correct": "Máy tính tự tìm quy luật thay vì chờ con người viết ra",
+    "wrong": ["Máy tính không cần dùng đến điện nữa", "Con người không cần phải lập trình AI nữa", "AI trở nên chậm chạp hơn"],
+    "explanation": "Thay vì viết hàng triệu dòng lệnh 'Nếu... thì...', ta cho AI xem ví dụ để nó tự rút ra quy luật."
+  },
+  {
+    "question": "Việc 'làm sạch dữ liệu' (data cleaning) trong AI là gì?",
+    "correct": "Loại bỏ thông tin sai, trùng lặp hoặc thiếu sót",
+    "wrong": ["Dùng khăn lau sạch ổ cứng máy tính", "Xóa toàn bộ dữ liệu để làm lại từ đầu", "Diệt virus cho các tệp tin dữ liệu"],
+    "explanation": "Dữ liệu sạch giúp AI học chính xác hơn và không bị nhầm lẫn bởi thông tin rác."
+  },
+  {
+    "question": "AI học không giám sát (Unsupervised Learning) hoạt động thế nào?",
+    "correct": "Tự tìm ra các nhóm dữ liệu giống nhau mà không có nhãn",
+    "wrong": ["Học mà không cần bất kỳ dữ liệu nào", "Học bằng cách đọc sách giáo khoa", "Học thông qua việc trả lời câu hỏi"],
+    "explanation": "AI tự phân loại dữ liệu dựa trên đặc điểm chung mà không cần con người bảo trước đó là gì."
+  },
+  {
+    "question": "Tại sao AI đôi khi bị 'học vẹt' (overfitting)?",
+    "correct": "Vì nó nhớ quá chi tiết dữ liệu cũ nên không áp dụng được cái mới",
+    "wrong": ["Vì nó không nhớ gì về dữ liệu đã học", "Vì nó học quá chậm", "Vì dữ liệu quá ít và quá đơn giản"],
+    "explanation": "Học vẹt khiến AI chỉ đúng với ví dụ cũ nhưng sai khi gặp tình huống thực tế hơi khác."
+  },
+  {
+    "question": "Điều gì xảy ra nếu ta huấn luyện AI nhận diện chó nhưng chỉ cho xem ảnh chó Poodle?",
+    "correct": "AI có thể không nhận ra những loài chó khác như Becgie",
+    "wrong": ["AI sẽ tự tìm ảnh các loài chó khác trên mạng", "AI sẽ thông minh hơn và biết mọi loại chó", "Máy tính sẽ báo lỗi và ngừng hoạt động"],
+    "explanation": "Đây là lỗi thiếu đa dạng dữ liệu, khiến AI có cái nhìn phiến diện."
+  },
+  {
+    "question": "Để AI dự báo thời tiết chính xác hơn, ta nên làm gì?",
+    "correct": "Cung cấp dữ liệu thời tiết của nhiều năm trước đó",
+    "wrong": ["Mua một chiếc máy tính có màn hình lớn hơn", "Yêu cầu AI phải đoán thật nhanh", "Xóa bớt dữ liệu cũ để máy nhẹ hơn"],
+    "explanation": "AI dự báo dựa trên việc tìm quy luật từ các dữ liệu lịch sử trong quá khứ."
+  },
+  {
+    "question": "Khi AI nhận được phản hồi 'Sai rồi' từ con người, nó sẽ làm gì?",
+    "correct": "Điều chỉnh lại cách tính toán để lần sau chính xác hơn",
+    "wrong": ["Cảm thấy buồn và ngừng làm việc", "Xóa bỏ toàn bộ kiến thức đã học", "Yêu cầu con người phải làm thay"],
+    "explanation": "Đây là cơ chế học tăng cường, giúp AI hoàn thiện hơn qua mỗi lần sai."
+  },
+  {
+    "question": "Công nghệ OCR (Nhận dạng ký tự quang học) giúp AI làm gì?",
+    "correct": "Chuyển hình ảnh văn bản thành chữ viết có thể chỉnh sửa",
+    "wrong": ["Vẽ lại bức ảnh thành một bức tranh", "Thay đổi màu sắc của chữ trong ảnh", "Xóa chữ ra khỏi hình ảnh"],
+    "explanation": "OCR giúp máy tính 'đọc' được chữ viết từ ảnh chụp hoặc bản quét."
+  },
+  {
+    "question": "AI phân tích cảm xúc (Sentiment Analysis) dùng để làm gì?",
+    "correct": "Biết được một bình luận là khen hay chê",
+    "wrong": ["Điều khiển cảm xúc của người đọc", "Thay đổi tâm trạng của người dùng", "Đọc được suy nghĩ thầm kín trong đầu"],
+    "explanation": "AI phân tích các từ ngữ để đoán xem người viết đang vui, buồn hay tức giận."
+  },
+  {
+    "question": "Tại sao AI thường gặp khó khăn khi hiểu lời nói mỉa mai?",
+    "correct": "Vì nghĩa thực tế trái ngược với từ ngữ được dùng",
+    "wrong": ["Vì người nói mỉa mai thường nói quá nhỏ", "Vì AI không biết tiếng Việt", "Vì mỉa mai không phải là ngôn ngữ"],
+    "explanation": "AI hiểu nghĩa đen của từ, trong khi mỉa mai đòi hỏi hiểu bối cảnh và cảm xúc sâu hơn."
+  },
+  {
+    "question": "AI nhận diện một bài hát thông qua giai điệu bằng cách nào?",
+    "correct": "So sánh 'vân tay âm thanh' với cơ sở dữ liệu bài hát",
+    "wrong": ["Nghe lời bài hát và đoán tên ca sĩ", "Hỏi người xung quanh xem đây là bài gì", "Đọc tên bài hát ghi trên đĩa nhạc"],
+    "explanation": "Mỗi bài hát có một dạng sóng âm đặc trưng mà AI có thể khớp với dữ liệu đã có."
+  },
+  {
+    "question": "Khi dùng AI dịch thuật, tại sao đôi khi câu văn nghe không tự nhiên?",
+    "correct": "Vì AI dịch sát nghĩa từ mà chưa hiểu hết văn hóa, ngữ cảnh",
+    "wrong": ["Vì AI không biết chia động từ", "Vì máy tính bị thiếu bộ nhớ khi dịch", "Vì ngôn ngữ đích quá khó để học"],
+    "explanation": "Ngôn ngữ con người có nhiều thành ngữ và cách nói ẩn dụ mà AI khó nắm bắt hoàn toàn."
+  },
+  {
+    "question": "AI mô tả hình ảnh (Image Captioning) là khả năng gì?",
+    "correct": "Tự viết một câu văn mô tả nội dung bức ảnh",
+    "wrong": ["Đặt tên cho tệp ảnh để dễ tìm kiếm", "Thay đổi độ sáng cho bức ảnh", "Tìm kiếm ảnh tương tự trên mạng"],
+    "explanation": "AI kết hợp thị giác máy tính (nhìn ảnh) và NLP (viết chữ) để mô tả ảnh."
+  },
+  {
+    "question": "Kỹ thuật 'Iterative Prompting' (Nhắc nhở lặp lại) là gì?",
+    "correct": "Điều chỉnh câu lệnh nhiều lần để có kết quả tốt nhất",
+    "wrong": ["Nhập cùng một câu lệnh nhiều lần liên tiếp", "Yêu cầu AI trả lời thật nhanh", "Viết câu lệnh dài nhất có thể"],
+    "explanation": "Thay vì hài lòng với kết quả đầu tiên, ta yêu cầu AI sửa đổi, bổ sung cho đến khi ưng ý."
+  },
+  {
+    "question": "Nếu muốn AI đóng vai một chuyên gia lịch sử, bạn nên viết prompt thế nào?",
+    "correct": "Hãy đóng vai một nhà sử học, trả lời tôi với phong cách...",
+    "wrong": ["Bạn là một máy tính, hãy tìm thông tin lịch sử", "Hãy viết về lịch sử một cách ngắn gọn nhất", "Tìm cho tôi thông tin về lịch sử"],
+    "explanation": "Việc thiết lập 'vai trò' (Role) giúp AI định hướng phong cách và độ sâu của câu trả lời."
+  },
+  {
+    "question": "AI tạo sinh có thể tạo ra hình ảnh từ văn bản nhờ vào điều gì?",
+    "correct": "Học mối liên hệ giữa từ ngữ và đặc điểm hình ảnh",
+    "wrong": ["Tìm ảnh có sẵn trên mạng rồi ghép lại", "Chụp ảnh thật rồi chỉnh sửa màu sắc", "Vẽ ngẫu nhiên các đường nét"],
+    "explanation": "AI học rằng từ 'biển' thường đi kèm với màu xanh và sóng nước để tạo ra ảnh mới."
+  },
+  {
+    "question": "Khi AI viết code (lập trình), người dùng cần lưu ý điều gì nhất?",
+    "correct": "Kiểm tra và chạy thử code để đảm bảo không có lỗi",
+    "wrong": ["Tin tưởng hoàn toàn vì AI lập trình rất giỏi", "Không cần đọc code, chỉ cần copy vào máy", "Xóa hết các ghi chú mà AI viết trong code"],
+    "explanation": "AI có thể tạo ra code trông có vẻ đúng nhưng thực tế lại chạy sai hoặc có lỗ hổng."
+  },
+  {
+    "question": "AI đa phương thức (Multimodal AI) là gì?",
+    "correct": "AI có thể xử lý cùng lúc nhiều loại dữ liệu (chữ, ảnh, tiếng)",
+    "wrong": ["AI có thể chạy trên nhiều loại máy tính khác nhau", "AI có thể làm nhiều công việc cùng một lúc", "AI được tạo ra bởi nhiều công ty khác nhau"],
+    "explanation": "Ví dụ: Bạn gửi một bức ảnh cho AI và hỏi 'Đây là đâu?' (Kết hợp ảnh và chữ)."
+  },
+  {
+    "question": "Tại sao không nên dùng AI để viết toàn bộ bài văn nghị luận?",
+    "correct": "Vì bài viết thiếu quan điểm cá nhân và trải nghiệm thực tế",
+    "wrong": ["Vì AI không biết viết tiếng Việt", "Vì AI viết quá dài khiến giáo viên mệt", "Vì AI không biết cách dùng dấu câu"],
+    "explanation": "AI tổng hợp thông tin, nhưng không có cảm xúc và suy nghĩ riêng như con người."
+  },
+  {
+    "question": "Làm sao để hạn chế hiện tượng 'ảo giác' (hallucination) của AI?",
+    "correct": "Yêu cầu AI trích dẫn nguồn hoặc cung cấp dữ liệu gốc",
+    "wrong": ["Yêu cầu AI trả lời thật nhanh", "Sử dụng nhiều dấu chấm than trong câu lệnh", "Tắt internet khi đang đặt câu hỏi"],
+    "explanation": "Khi phải tìm nguồn cụ thể, AI sẽ ít 'tự chế' ra thông tin sai lệch hơn."
+  },
+  {
+    "question": "Cấu trúc 'Nếu... Thì...' trong lập trình cơ bản tương ứng với gì trong AI?",
+    "correct": "Một nhánh trong cây quyết định (Decision Tree)",
+    "wrong": ["Một tệp tin lưu trữ dữ liệu", "Một chiếc loa phát âm thanh", "Một đường truyền internet"],
+    "explanation": "Cây quyết định chia dữ liệu thành các nhánh dựa trên câu hỏi Đúng/Sai để ra kết quả."
+  },
+  {
+    "question": "Thuật toán tìm đường ngắn nhất (như trong Google Maps) hoạt động ra sao?",
+    "correct": "Tính toán chi phí (khoảng cách, thời gian) giữa các điểm",
+    "wrong": ["Đi thử tất cả mọi con đường cho đến khi tới nơi", "Đi theo đường thẳng nhất có thể", "Chọn con đường có nhiều cây xanh nhất"],
+    "explanation": "Thuật toán phân tích các nút giao thông để tìm lộ trình tối ưu nhất về thời gian hoặc quãng đường."
+  },
+  {
+    "question": "Tư duy phân rã (Decomposition) trong STEM giúp gì khi dùng AI?",
+    "correct": "Chia yêu cầu lớn thành nhiều câu lệnh nhỏ, rõ ràng",
+    "wrong": ["Xóa bỏ những phần không quan trọng của AI", "Chia nhỏ máy tính thành nhiều phần", "Làm cho AI chạy chậm lại để dễ theo dõi"],
+    "explanation": "Chia nhỏ vấn đề giúp bạn viết prompt chính xác hơn và AI trả lời chi tiết hơn."
+  },
+  {
+    "question": "Tại sao thuật toán tìm kiếm nhị phân lại nhanh hơn tìm kiếm tuần tự?",
+    "correct": "Vì nó loại bỏ một nửa dữ liệu sau mỗi bước kiểm tra",
+    "wrong": ["Vì nó tìm kiếm tất cả các mục cùng một lúc", "Vì nó không cần dữ liệu phải sắp xếp", "Vì nó chỉ tìm những mục ở cuối danh sách"],
+    "explanation": "Thay vì xem từng cái, nó chia đôi danh sách, giúp tìm thấy mục tiêu cực nhanh."
+  },
+  {
+    "question": "Trong tư duy máy tính, 'nhận diện mẫu' (pattern recognition) là gì?",
+    "correct": "Tìm ra điểm chung giữa các vấn đề tương tự nhau",
+    "wrong": ["Vẽ lại các hình mẫu có sẵn", "Ghi nhớ chính xác từng con số", "Thay đổi mẫu dữ liệu thành màu khác"],
+    "explanation": "Khi thấy các bài toán có dạng giống nhau, ta có thể dùng chung một cách giải."
+  },
+  {
+    "question": "Điều gì xảy ra nếu một thuật toán AI bị lặp vô hạn (infinite loop)?",
+    "correct": "Chương trình sẽ chạy mãi không dừng và gây treo máy",
+    "wrong": ["Máy tính sẽ tự động nâng cấp tốc độ", "AI sẽ trở nên thông minh đột biến", "Kết quả sẽ chính xác tuyệt đối"],
+    "explanation": "Lặp vô hạn là lỗi logic khiến máy tính thực hiện một bước lặp đi lặp lại mà không có điểm dừng."
+  },
+  {
+    "question": "Việc dùng AI để tạo ra hình ảnh giả mạo người nổi tiếng vi phạm điều gì?",
+    "correct": "Quyền hình ảnh và đạo đức về sự trung thực",
+    "wrong": ["Quyền sở hữu máy tính", "Luật về tốc độ internet", "Quy tắc sử dụng điện năng"],
+    "explanation": "Sử dụng hình ảnh người khác mà không xin phép để lừa dối là vi phạm đạo đức và pháp luật."
+  },
+  {
+    "question": "Tại sao nói AI có thể gây ra 'định kiến' (bias) trong tuyển dụng?",
+    "correct": "Vì nó học theo những định kiến có sẵn trong dữ liệu cũ",
+    "wrong": ["Vì AI ghét những người không biết dùng máy tính", "Vì AI chỉ chọn những người có tên ngắn", "Vì AI không biết đọc hồ sơ"],
+    "explanation": "Nếu trước đây công ty chỉ tuyển nam, AI sẽ học được quy luật sai là 'nam giỏi hơn nữ'."
+  },
+  {
+    "question": "Vấn đề 'Hộp đen' (Black Box) trong AI nghĩa là gì?",
+    "correct": "Con người không hiểu rõ tại sao AI đưa ra kết quả đó",
+    "wrong": ["AI được lưu trữ trong một chiếc hộp màu đen", "Máy tính bị tắt nguồn hoàn toàn", "AI chỉ hoạt động trong bóng tối"],
+    "explanation": "Một số mô hình AI quá phức tạp khiến ngay cả người tạo ra nó cũng không giải thích được logic chi tiết."
+  },
+  {
+    "question": "Việc AI tự tạo ra các tác phẩm nghệ thuật gây tranh cãi về điều gì?",
+    "correct": "Ai là tác giả thực sự: người viết prompt hay AI?",
+    "wrong": ["AI vẽ quá nhanh khiến con người không kịp nhìn", "Màu sắc AI dùng quá sặc sỡ", "AI không biết vẽ hình vuông"],
+    "explanation": "Hiện nay luật pháp vẫn đang tranh cãi về việc tác phẩm AI có được bảo hộ bản quyền hay không."
+  },
+  {
+    "question": "Deepfake âm thanh có thể được dùng để lừa đảo như thế nào?",
+    "correct": "Giả giọng người thân để gọi điện yêu cầu chuyển tiền",
+    "wrong": ["Làm cho giọng nói to hơn bình thường", "Thay đổi ngôn ngữ nói sang tiếng nước ngoài", "Hát thay cho ca sĩ trong các bài hát"],
+    "explanation": "Kẻ xấu dùng AI sao chép giọng nói của một người để tạo lòng tin và lừa đảo."
+  },
+  {
+    "question": "Hành động nào sau đây là thiếu đạo đức khi dùng AI trong học tập?",
+    "correct": "Dùng AI viết toàn bộ bài luận rồi nộp làm bài của mình",
+    "wrong": ["Dùng AI để giải thích một khái niệm khó hiểu", "Dùng AI để tìm ý tưởng cho bài thuyết trình", "Dùng AI để kiểm tra lỗi chính tả"],
+    "explanation": "AI nên là công cụ hỗ trợ học tập, không phải công cụ làm thay để gian lận."
+  },
+  {
+    "question": "AI tiêu tốn nhiều năng lượng điện cho việc gì nhất?",
+    "correct": "Huấn luyện các mô hình lớn với hàng tỷ dữ liệu",
+    "wrong": ["Khi người dùng nhập một câu hỏi ngắn", "Khi hiển thị kết quả ra màn hình", "Khi tắt máy tính"],
+    "explanation": "Các siêu máy tính chạy liên tục nhiều tháng để huấn luyện AI tiêu tốn lượng điện khổng lồ."
+  },
+  {
+    "question": "Khi nhận được một email mời nhận thưởng từ người lạ có văn phong quá hoàn hảo, bạn nên nghi ngờ gì?",
+    "correct": "Email có thể được viết bởi AI để lừa đảo (phishing)",
+    "wrong": ["Người gửi là một thiên tài ngôn ngữ", "Máy tính của bạn đang bị hỏng", "Email này chắc chắn là thật vì viết đúng chính tả"],
+    "explanation": "AI giúp kẻ lừa đảo viết email chuyên nghiệp, không sai lỗi chính tả để đánh lừa nạn nhân."
+  },
+  {
+    "question": "Tại sao không nên cung cấp địa chỉ nhà và số điện thoại cho các AI lạ?",
+    "correct": "Thông tin có thể bị thu thập cho mục đích quảng cáo hoặc xấu",
+    "wrong": ["Vì AI sẽ dùng thông tin đó để đến thăm nhà bạn", "Vì AI không biết đọc số điện thoại", "Vì sẽ làm cho AI chạy chậm đi"],
+    "explanation": "Dữ liệu cá nhân là tài sản quý giá, nếu lọt vào tay kẻ xấu sẽ gây nguy hiểm."
+  },
+  {
+    "question": "Nếu AI đưa ra lời khuyên về sức khỏe, bạn nên làm gì?",
+    "correct": "Tham khảo ý kiến bác sĩ trước khi áp dụng",
+    "wrong": ["Làm theo ngay vì AI có kiến thức y khoa khổng lồ", "Xóa ứng dụng AI đó ngay lập tức", "Chia sẻ lời khuyên đó cho tất cả bạn bè"],
+    "explanation": "AI không phải bác sĩ và có thể nhầm lẫn, sức khỏe là điều quan trọng cần chuyên gia kiểm chứng."
+  },
+  {
+    "question": "Cách kiểm tra thông tin từ AI có chính xác hay không là gì?",
+    "correct": "Tìm kiếm thông tin đó ở 2-3 nguồn uy tín khác nhau",
+    "wrong": ["Hỏi lại AI đó một lần nữa", "Xem câu trả lời có dài và chi tiết không", "Nhờ một người bạn không biết gì về chủ đề đó kiểm tra"],
+    "explanation": "Đối chiếu chéo (cross-check) là cách tốt nhất để xác minh sự thật."
+  },
+  {
+    "question": "Khi dùng AI tạo ảnh, việc nhập 'không có người trong ảnh' được gọi là gì?",
+    "correct": "Negative Prompt (Câu lệnh phủ định)",
+    "wrong": ["Positive Prompt (Câu lệnh khẳng định)", "Error Prompt (Câu lệnh lỗi)", "Silent Prompt (Câu lệnh im lặng)"],
+    "explanation": "Negative prompt giúp ta nói cho AI biết những điều mình KHÔNG muốn xuất hiện trong kết quả."
+  },
+  {
+    "question": "Vì sao việc phụ thuộc quá nhiều vào AI dịch thuật khiến ta lười học ngoại ngữ?",
+    "correct": "Vì ta không còn nhu cầu ghi nhớ từ vựng và cấu trúc câu",
+    "wrong": ["Vì AI dịch quá chậm khiến ta không muốn chờ", "Vì AI không dịch được những từ khó", "Vì học ngoại ngữ không còn quan trọng nữa"],
+    "explanation": "Khi có công cụ làm thay, não bộ sẽ ít vận động và giảm khả năng ghi nhớ tự nhiên."
+  },
+  {
+    "question": "AI giúp ích gì trong việc bảo vệ môi trường?",
+    "correct": "Theo dõi sự thay đổi của rừng và động vật hoang dã qua vệ tinh",
+    "wrong": ["Tự động nhặt rác trên mọi con đường", "Thay thế toàn bộ cây xanh bằng máy lọc khí", "Ngăn chặn hoàn toàn hiện tượng nóng lên toàn cầu"],
+    "explanation": "AI phân tích ảnh vệ tinh để phát hiện sớm các vụ phá rừng hoặc theo dõi loài quý hiếm."
+  },
+  {
+    "question": "Trong tương lai, nghề 'Kỹ sư Prompt' (Prompt Engineer) làm công việc gì?",
+    "correct": "Thiết kế các câu lệnh tối ưu để AI làm việc hiệu quả nhất",
+    "wrong": ["Sửa chữa phần cứng cho máy tính chạy AI", "Viết mã nguồn để tạo ra AI từ đầu", "Quản lý các robot trong nhà máy"],
+    "explanation": "Đây là nghề chuyên giao tiếp với AI để lấy ra kết quả chất lượng nhất."
+  },
+  {
+    "question": "AI hỗ trợ các vận động viên thể thao như thế nào?",
+    "correct": "Phân tích video động tác để sửa lỗi và tối ưu hiệu suất",
+    "wrong": ["Chơi thay vận động viên trong các trận đấu", "Giúp vận động viên không bao giờ bị mệt", "Thay thế trọng tài để không bao giờ sai"],
+    "explanation": "AI phân tích góc độ cơ thể, tốc độ để đưa ra lời khuyên cải thiện kỹ thuật."
+  },
+  {
+    "question": "AI giúp ích gì cho những người khiếm thị?",
+    "correct": "Mô tả bằng giọng nói những gì đang diễn ra trong ảnh/video",
+    "wrong": ["Giúp họ nhìn thấy mọi thứ như người bình thường", "Thay thế hoàn toàn việc đi lại của họ", "Điều khiển tâm trí của họ"],
+    "explanation": "AI chuyển hình ảnh thành lời nói, giúp người khiếm thị hiểu môi trường xung quanh."
+  },
+  {
+    "question": "Trong nông nghiệp, 'nông nghiệp chính xác' dùng AI để làm gì?",
+    "correct": "Tưới nước và bón phân chính xác cho từng cây bị bệnh",
+    "wrong": ["Khiến mọi loại cây đều ra quả trong một ngày", "Thay thế toàn bộ nông dân bằng robot", "Loại bỏ hoàn toàn việc dùng nước tưới"],
+    "explanation": "AI giúp nhận diện cây nào thiếu chất hoặc bị sâu bệnh để xử lý đúng chỗ, tránh lãng phí."
+  },
+  {
+    "question": "AI trong game có thể thay đổi thế nào để game hấp dẫn hơn?",
+    "correct": "Điều chỉnh độ khó dựa trên trình độ của người chơi",
+    "wrong": ["Tự động cho người chơi thắng mọi trận đấu", "Xóa bỏ toàn bộ các thử thách trong game", "Làm cho game chạy không cần internet"],
+    "explanation": "Nếu bạn chơi quá giỏi, AI sẽ làm đối thủ mạnh lên để bạn không thấy chán."
   }
 ]
