@@ -1,0 +1,6 @@
+.env
+/__pycache__
+config.yml
+snake.db
+cloudflared
+cloudflared.exe
