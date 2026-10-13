@@ -1,6 +1,6 @@
 // Service worker: giúp game chạy offline.
 // Khi sửa index.html / question.json, hãy tăng số phiên bản CACHE để máy cập nhật bản mới.
-const CACHE = 'snake-ai-v5';
+const CACHE = 'snake-ai-v6';
 const ASSETS = [
   './',
   './index.html',
@@ -11,9 +11,11 @@ const ASSETS = [
   './icon-512.png'
 ];
 
+const ASSET_PATHS = new Set(ASSETS.map((a) => new URL(a, self.location).pathname));
+
 self.addEventListener('install', (e) => {
   e.waitUntil(
-    caches.open(CACHE).then((c) => c.addAll(ASSETS)).then(() => self.skipWaiting())
+    caches.open(CACHE).then((c) => Promise.all(ASSETS.map((a) => c.add(a).catch(() => {})))).then(() => self.skipWaiting())
   );
 });
 
@@ -31,6 +33,9 @@ self.addEventListener('fetch', (e) => {
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
   if (url.origin !== location.origin) return;
+  // Khi trang do main.py phục vụ (cùng địa chỉ với máy chủ game): KHÔNG được cache /socket.io, /health, /status...
+  // Chỉ xử lý trang chính và các file trong ASSETS.
+  if (req.mode !== 'navigate' && !ASSET_PATHS.has(url.pathname)) return;
 
   e.respondWith((async () => {
     const cache = await caches.open(CACHE);

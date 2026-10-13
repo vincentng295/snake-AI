@@ -8,6 +8,10 @@ Rắn Săn Đáp Án AI - máy chủ game online.
 - Có sẵn Cloudflare Tunnel (cloudflared) để đưa server ra domain
   https://snake-ai.huskydg.io.vn
 - CORS mở cho trang tĩnh (vd snake-ai-mocha.vercel.app).
+- Có thể tự phục vụ luôn index.html (+ sw.js, question.json, ...) để chạy nội bộ,
+  không cần Vercel: mở http://<IP-máy>:<PORT>/ (đặt HOST=0.0.0.0 để cả lớp cùng vào).
+- Chống lag: mỗi người chỉ nhận phần bản đồ quanh mình, có điều tiết theo tốc độ mạng
+  (client báo "ack"), tắt Nagle (TCP_NODELAY). Có chế độ khán giả (xem không chơi).
 """
 import io
 import os
@@ -21,6 +25,8 @@ import sqlite3
 import tarfile
 import platform
 import threading
+import socket
+import mimetypes
 import importlib
 import subprocess
 import traceback
@@ -50,10 +56,11 @@ def ensure_requirements():
 
 ensure_requirements()
 
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_from_directory, abort
 from flask_socketio import SocketIO, join_room, leave_room
 from dotenv import load_dotenv
 from werkzeug.middleware.proxy_fix import ProxyFix
+from werkzeug.serving import WSGIRequestHandler
 
 load_dotenv()
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -85,6 +92,16 @@ PORT = env_int("PORT", 8888)
 ALLOWED_ORIGINS_RAW = os.getenv("ALLOWED_ORIGINS", "*").strip()
 ALLOW_ALL = ALLOWED_ORIGINS_RAW in ("", "*")
 ALLOWED_LIST = [o.strip().rstrip("/") for o in ALLOWED_ORIGINS_RAW.split(",") if o.strip()]
+
+# Tự phục vụ giao diện web (index.html...) để chạy nội bộ. Chỉ các file trong danh sách trắng
+# bên dưới mới được trả ra, nên .env, snake.db, main.py... không bao giờ bị lộ.
+SERVE_WEB = env_bool("SERVE_WEB", True)
+WEB_DIR = os.getenv("WEB_DIR", BASE_DIR)
+WEB_FILES = {"index.html", "sw.js", "manifest.webmanifest", "question.json", "socket_io_min.js",
+             "icon-192.png", "icon-512.png"}
+WEB_FILES |= {x.strip() for x in os.getenv("WEB_EXTRA_FILES", "").split(",") if x.strip() and "/" not in x and "\\" not in x}
+mimetypes.add_type("application/manifest+json", ".webmanifest")
+mimetypes.add_type("text/javascript", ".js")
 
 DB_PATH = os.getenv("DB_PATH", os.path.join(BASE_DIR, "snake.db"))
 QUESTION_FILE = os.getenv("QUESTION_FILE", os.path.join(BASE_DIR, "question.json"))
@@ -123,6 +140,9 @@ SPAWN_PROTECT = env_float("SPAWN_PROTECT", 2.5)  # giây "bất tử" sau khi xu
 AFK_SECONDS = env_int("AFK_SECONDS", 90)
 RECONNECT_GRACE = env_int("RECONNECT_GRACE", 20)  # giữ tên bao lâu sau khi mất kết nối
 ITEM_SPACING = env_int("ITEM_SPACING", 10)       # khoảng cách tối thiểu giữa các ô đáp án
+INTEREST_R = env_int("INTEREST_R", 14)           # chỉ gửi rắn nằm trong bán kính này quanh đầu rắn của người chơi
+MAX_SPECTATORS = env_int("MAX_SPECTATORS", 200)  # số khán giả tối đa
+LAG_SOFT_MS = env_int("LAG_SOFT_MS", 1500)       # client chậm hơn mức này thì giảm tần suất gửi state cho riêng client đó
 
 W = GAME_SIZE
 TICK = TICK_MS / 1000.0
@@ -138,7 +158,7 @@ socketio = SocketIO(
     cors_allowed_origins="*" if ALLOW_ALL else ALLOWED_LIST,
     async_mode="threading",
     ping_interval=10,
-    ping_timeout=25,
+    ping_timeout=30,
 )
 
 
@@ -289,12 +309,14 @@ S = SimpleNamespace(tick=0, next_id=1, next_heart=0.0, best_dirty=False, last_fl
 players = {}   # id -> Player
 by_key = {}    # khoá tên (không dấu, không phân biệt hoa thường) -> id
 by_sid = {}    # sid -> id
+specs = {}     # sid -> Spec (khán giả)
 R = {"id": 0, "st": "between", "ends": 0.0, "between_until": 0.0, "q": None, "items": [], "last_end": None}
 
 
 class Player:
     __slots__ = ("id", "sid", "name", "key", "token", "color", "snake", "dir", "queue", "grow", "hearts",
-                 "score", "streak", "alive", "dead", "connected", "expire", "protect_until", "last_input")
+                 "score", "streak", "alive", "dead", "connected", "expire", "protect_until", "last_input",
+                 "acked", "ack_seen", "last_sent", "cam")
 
     def __init__(self, pid, sid, name, key, token, color):
         self.id = pid
@@ -316,6 +338,21 @@ class Player:
         self.expire = None
         self.protect_until = 0.0
         self.last_input = now_ts()
+        self.acked = 0          # tick mới nhất mà client báo đã nhận
+        self.ack_seen = False   # client cũ không gửi ack thì không điều tiết
+        self.last_sent = 0
+        self.cam = None         # vị trí đầu rắn gần nhất, dùng để cắt vùng gửi
+
+
+class Spec:
+    """Khán giả: chỉ xem, không có rắn, nhận toàn bộ bản đồ."""
+    __slots__ = ("sid", "acked", "ack_seen", "last_sent")
+
+    def __init__(self, sid):
+        self.sid = sid
+        self.acked = S.tick
+        self.ack_seen = False
+        self.last_sent = 0
 
 
 def name_key(name):
@@ -552,9 +589,9 @@ def apply_hit(p, victims, now):
         spawn_snake(p, now)
 
 
-def game_tick(now):
+def game_tick(now, idle=False):
     S.tick += 1
-    maintain_round(now)
+    maintain_round(now, idle)
     maintain_hearts(now)
     cleanup(now)
 
@@ -633,48 +670,110 @@ def game_tick(now):
                     emit_to(p, "ev", {"t": "heartfull", "pts": HEART_FULL_BONUS})
                 break
 
-    # 4) gửi trạng thái cho mọi người
-    socketio.emit("state", snapshot(now), to=ROOM)
+    # 4) gửi trạng thái cho từng người (cắt theo vùng nhìn, điều tiết theo mạng)
+    send_states(now)
 
 
-def snapshot(now):
-    s = []
+def near(cells, cx, cy):
+    """Có đốt nào của rắn nằm trong ô vuông bán kính INTEREST_R quanh (cx, cy) không (tính cả đi xuyên tường)."""
+    R = INTEREST_R
+    for x, y in cells:
+        dx = abs(x - cx)
+        if dx > W - dx:
+            dx = W - dx
+        if dx > R:
+            continue
+        dy = abs(y - cy)
+        if dy > W - dy:
+            dy = W - dy
+        if dy <= R:
+            return True
+    return False
+
+
+def due(link):
+    """Điều tiết theo từng client: càng chậm (ack về muộn) càng gửi thưa, state là ảnh chụp đầy đủ nên bỏ bớt không sao."""
+    if link.ack_seen:
+        over = (S.tick - link.acked) * TICK_MS / float(max(200, LAG_SOFT_MS))
+        n = 1 if over < 1 else 2 if over < 2 else 4   # tối đa 4: client vẫn nội suy mượt giữa các ảnh cách nhau 4 tick
+    else:
+        n = 1
+    if S.tick - link.last_sent >= n:
+        link.last_sent = S.tick
+        return True
+    return False
+
+
+def build_frame(now):
+    ents = []
     for p in players.values():
         if p.alive and p.snake:
             flat = []
             for x, y in p.snake:
                 flat.append(x)
                 flat.append(y)
-            s.append([p.id, p.name, p.color, flat, p.dir[0], p.dir[1], p.hearts, p.score,
-                      1 if p.protect_until > now else 0])
+            ents.append((p, [p.id, p.name, p.color, flat, p.dir[0], p.dir[1], p.hearts, p.score,
+                             1 if p.protect_until > now else 0]))
     if R["st"] == "active":
         left, total = max(0.0, R["ends"] - now), ROUND_SECONDS
     else:
         left, total = max(0.0, R["between_until"] - now), INTERMISSION_SECONDS
     lb = sorted(([p.name, p.score] for p in players.values() if p.score > 0), key=lambda x: -x[1])[:5]
-    return {
+    common = {
         "k": S.tick,
         "r": [R["id"], 1 if R["st"] == "active" else 0, round(left, 1), total],
-        "s": s,
         "it": [[i["i"], i["x"], i["y"]] for i in R["items"]],
         "hr": [[h["x"], h["y"], round(h["until"] - now, 1)] for h in S.hearts],
         "lb": lb,
     }
+    return common, ents
+
+
+def send_states(now):
+    if not players and not specs:
+        return
+    common, ents = build_frame(now)
+    everyone = [e for _, e in ents]
+    for p in list(players.values()):
+        if not (p.connected and p.sid) or not due(p):
+            continue
+        if p.alive and p.snake:
+            p.cam = p.snake[0]
+        if p.cam is None:
+            mine = everyone
+        else:
+            cx, cy = p.cam
+            mine = [e for q, e in ents if q is p or near(q.snake, cx, cy)]
+        payload = dict(common)
+        payload["s"] = mine
+        socketio.emit("state", payload, to=p.sid)
+    if specs:
+        payload = None
+        for sp in list(specs.values()):
+            if not due(sp):
+                continue
+            if payload is None:
+                payload = dict(common)
+                payload["s"] = everyone
+            socketio.emit("state", payload, to=sp.sid)
 
 
 def game_loop():
     next_t = time.monotonic()
     while True:
         connected = 0
+        watchers = 0
         try:
             now = now_ts()
             with G:
                 connected = sum(1 for p in players.values() if p.connected)
-                if connected == 0:
+                watchers = len(specs)
+                if connected == 0 and watchers == 0:
                     maintain_round(now, idle=True)
                     cleanup(now)
                 else:
-                    game_tick(now)
+                    # chỉ có khán giả: vẫn chạy để họ thấy đồng hồ/câu hỏi, nhưng không đếm giờ câu hỏi
+                    game_tick(now, idle=(connected == 0))
         except Exception:
             traceback.print_exc()
         next_t += TICK
@@ -682,7 +781,7 @@ def game_loop():
         if delay < 0:
             next_t = time.monotonic()
             delay = 0
-        socketio.sleep(delay if connected else max(delay, 0.4))
+        socketio.sleep(delay if (connected or watchers) else max(delay, 0.4))
 
 
 # =========================================
@@ -692,7 +791,7 @@ def join_ack(p):
     return {
         "ok": True, "id": p.id, "name": p.name, "W": W, "tick": TICK_MS, "heartsMax": HEARTS_MAX,
         "hearts": p.hearts, "score": p.score, "dead": p.dead,
-        "best": best_all.get(p.key, [p.name, 0])[1],
+        "best": best_all.get(p.key, [p.name, 0])[1], "ir": INTEREST_R,
     }
 
 
@@ -733,7 +832,11 @@ def on_join(data):
             by_key[key] = p.id
             feed(f"{p.name} vào phòng")
         by_sid[sid] = p.id
+        specs.pop(sid, None)
         p.last_input = now
+        p.acked = S.tick
+        p.ack_seen = False
+        p.last_sent = 0
         join_room(ROOM)
         if not p.dead and not p.alive:
             spawn_snake(p, now)
@@ -793,6 +896,50 @@ def on_back(_data=None):
         return {"ok": True, "hearts": p.hearts, "score": p.score, "dead": p.dead}
 
 
+@socketio.on("ack")
+def on_ack(data):
+    """Client báo tick mới nhất đã nhận (để điều tiết) và đo ping qua callback."""
+    try:
+        k = int(data.get("k")) if isinstance(data, dict) else 0
+    except (TypeError, ValueError):
+        k = 0
+    with G:
+        link = _player_of(request.sid) or specs.get(request.sid)
+        if link is not None:
+            link.ack_seen = True
+            if k > link.acked:
+                link.acked = k
+        return {"k": S.tick}
+
+
+@socketio.on("spectate")
+def on_spectate(_data=None):
+    sid = request.sid
+    now = now_ts()
+    with G:
+        if sid in by_sid:
+            return {"ok": False, "error": "Bạn đang chơi, hãy thoát phòng trước khi xem"}
+        if sid not in specs and len(specs) >= MAX_SPECTATORS:
+            return {"ok": False, "error": "Phòng xem đã đầy, hãy thử lại sau"}
+        specs[sid] = Spec(sid)
+        join_room(ROOM)
+        if R["q"] is not None:
+            socketio.emit("question", question_payload(), to=sid)
+            if R["st"] == "between" and R["last_end"]:
+                le = dict(R["last_end"])
+                le["left"] = round(max(0.0, R["between_until"] - now), 1)
+                socketio.emit("round_end", le, to=sid)
+        return {"ok": True, "spec": True, "W": W, "tick": TICK_MS, "heartsMax": HEARTS_MAX, "ir": INTEREST_R}
+
+
+@socketio.on("unspectate")
+def on_unspectate(_data=None):
+    with G:
+        if specs.pop(request.sid, None) is not None:
+            leave_room(ROOM)
+    return {"ok": True}
+
+
 @socketio.on("respawn")
 def on_respawn(_data=None):
     with G:
@@ -822,6 +969,7 @@ def on_leave(_data=None):
 def on_disconnect(*_args):
     sid = request.sid
     with G:
+        specs.pop(sid, None)
         p = _player_of(sid)
         by_sid.pop(sid, None)
         if p and p.sid == sid:
@@ -834,9 +982,33 @@ def on_disconnect(*_args):
 # =========================================
 # HTTP (kiểm tra sức khoẻ, bảng xếp hạng)
 # =========================================
+def _no_cache(resp):
+    resp.headers["Cache-Control"] = "no-cache"
+    return resp
+
+
+def _send_web(name):
+    resp = send_from_directory(WEB_DIR, name, max_age=0)
+    if name.endswith((".png", ".ico")):
+        resp.headers["Cache-Control"] = "public, max-age=86400"
+    else:
+        _no_cache(resp)
+    return resp
+
+
 @app.route("/")
 def index():
+    if SERVE_WEB and os.path.isfile(os.path.join(WEB_DIR, "index.html")):
+        return _send_web("index.html")
     return jsonify({"name": "Rắn Săn Đáp Án AI", "status": "ok"})
+
+
+@app.route("/<path:name>")
+def web_file(name):
+    # Chỉ phục vụ file trong danh sách trắng WEB_FILES, mọi đường dẫn khác trả 404
+    if not SERVE_WEB or name not in WEB_FILES or not os.path.isfile(os.path.join(WEB_DIR, name)):
+        abort(404)
+    return _send_web(name)
 
 
 @app.route("/health")
@@ -848,7 +1020,7 @@ def health():
 def status():
     with G:
         online = sum(1 for p in players.values() if p.connected)
-    return jsonify({"online": online, "max": MAX_PLAYERS, "top": top_best(5)})
+    return jsonify({"online": online, "spectators": len(specs), "max": MAX_PLAYERS, "top": top_best(5)})
 
 
 @app.route("/leaderboard")
@@ -1013,6 +1185,26 @@ def stop_tunnel():
             pass
 
 
+class NoDelayHandler(WSGIRequestHandler):
+    """Tắt thuật toán Nagle: gói state/dir nhỏ được gửi ngay, không bị gom chờ ~40ms."""
+
+    def setup(self):
+        super().setup()
+        try:
+            self.connection.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+        except Exception:
+            pass
+
+
+def lan_ip():
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sk:
+            sk.connect(("10.255.255.255", 1))
+            return sk.getsockname()[0]
+    except Exception:
+        return None
+
+
 def shutdown_save():
     try:
         with G:
@@ -1038,6 +1230,16 @@ def start_game_loop():
 if __name__ == "__main__":
     print(f"[*] Bản đồ {W}x{W}, tick {TICK_MS}ms, tối đa {MAX_PLAYERS} người, tim {HEARTS_START}/{HEARTS_MAX}")
     print(f"[*] CORS: {'cho phép mọi nguồn (*)' if ALLOW_ALL else ', '.join(ALLOWED_LIST)}")
+    if SERVE_WEB and os.path.isfile(os.path.join(WEB_DIR, "index.html")):
+        print(f"[*] Chạy nội bộ: mở http://{'127.0.0.1' if HOST in ('0.0.0.0', '::') else HOST}:{PORT}/")
+        if HOST in ("0.0.0.0", "::"):
+            ip = lan_ip()
+            if ip:
+                print(f"[*] Máy khác trong cùng mạng LAN/Wi-Fi mở: http://{ip}:{PORT}/")
+        else:
+            print("[*] (Muốn máy khác trong mạng LAN vào được: đặt HOST=0.0.0.0 trong .env)")
+    else:
+        print("[*] Không tìm thấy index.html hoặc SERVE_WEB=false: chỉ chạy API/Socket.IO.")
     start_game_loop()
 
     if TUNNEL_ENABLED:
@@ -1046,7 +1248,8 @@ if __name__ == "__main__":
         print("[*] TUNNEL=false - không chạy cloudflared, chỉ phục vụ nội bộ.")
 
     try:
-        socketio.run(app, host=HOST, port=PORT, debug=False, allow_unsafe_werkzeug=True)
+        socketio.run(app, host=HOST, port=PORT, debug=False, allow_unsafe_werkzeug=True,
+                     request_handler=NoDelayHandler)
     except KeyboardInterrupt:
         print("\n[*] Nhận Ctrl+C - đang thoát chương trình...")
         stop_tunnel()

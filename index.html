@@ -121,6 +121,16 @@ button:focus-visible{outline:3px dashed var(--ink);outline-offset:3px}
 .inp{width:100%;padding:12px 14px;border:3px solid var(--ink);border-radius:14px;font:inherit;font-size:18px;-webkit-user-select:text;user-select:text;background:#f1f8ff;color:var(--ink)}
 .online-only{display:none}#app.net .online-only{display:flex}
 .ans.right{background:#b9f3cf}.ans.dim{opacity:.45}
+.pill.mid b{color:#b36b00}.pill.bad b{color:#c01f3a}
+.spec-only{display:none}#app.spec .spec-only{display:flex}
+#app.spec #hearts,#app.spec #scorePill,#app.spec #bestPill,#app.spec #pad{display:none}
+#netbar{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);max-width:92%;padding:6px 14px;border-radius:999px;border:3px solid var(--ink);
+  box-shadow:0 3px 0 var(--ink);font-size:14px;font-weight:800;background:#fff3bf;pointer-events:none;text-align:center;z-index:3}
+#netbar[hidden]{display:none}
+#specbar{grid-area:pad;display:none;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap}
+#app.spec #specbar{display:flex}
+#specName{flex:1 1 150px;min-width:130px;text-align:center;line-height:1.2;font-size:clamp(14px,3.6vw,17px);background:#fff;border:3px solid var(--ink);border-radius:14px;padding:8px 10px;box-shadow:0 3px 0 var(--ink)}
+#specbar .btn.alt{padding:8px 12px;font-size:14px}
 @media (prefers-reduced-motion:reduce){.shake{animation:none}#toast{transition:none}}
 </style>
 </head>
@@ -128,9 +138,11 @@ button:focus-visible{outline:3px dashed var(--ink);outline-offset:3px}
 <div id="app">
   <header id="hud">
     <div id="hearts" role="img" aria-label="Số tim còn lại"></div>
-    <div class="pill"><small>Điểm</small><b id="score">0</b></div>
-    <div class="pill"><small>Cao nhất</small><b id="best">0</b></div>
+    <div class="pill spec-only"><small>Chế độ</small><b>Khán giả</b></div>
+    <div class="pill" id="scorePill"><small>Điểm</small><b id="score">0</b></div>
+    <div class="pill" id="bestPill"><small>Cao nhất</small><b id="best">0</b></div>
     <div class="pill online-only"><small>Câu hỏi</small><b id="timeV">0</b></div>
+    <div class="pill online-only" id="pingPill"><small>Ping</small><b id="pingV">-</b></div>
     <button class="ib" id="btnSound" aria-label="Bật hoặc tắt âm thanh"></button>
     <button class="ib" id="btnFs" aria-label="Toàn màn hình" hidden></button>
     <button class="ib" id="btnPause" aria-label="Tạm dừng">
@@ -148,6 +160,7 @@ button:focus-visible{outline:3px dashed var(--ink);outline-offset:3px}
     <div id="wrap">
       <canvas id="cv"></canvas>
       <div id="toast" role="status"></div>
+      <div id="netbar" role="status" hidden></div>
     </div>
   </main>
 
@@ -156,6 +169,13 @@ button:focus-visible{outline:3px dashed var(--ink);outline-offset:3px}
     <button class="left" data-dir="left" aria-label="Trái"><svg viewBox="0 0 24 24"><path d="M12 5l9 14H3z"/></svg></button>
     <button class="down" data-dir="down" aria-label="Xuống"><svg viewBox="0 0 24 24"><path d="M12 5l9 14H3z"/></svg></button>
     <button class="right" data-dir="right" aria-label="Phải"><svg viewBox="0 0 24 24"><path d="M12 5l9 14H3z"/></svg></button>
+  </nav>
+  <nav id="specbar" aria-label="Điều khiển khán giả">
+    <button class="ib" data-spec="prev" aria-label="Người chơi trước">&#9664;</button>
+    <div id="specName" role="status"></div>
+    <button class="ib" data-spec="next" aria-label="Người chơi sau">&#9654;</button>
+    <button class="btn alt" id="specMode" data-spec="mode">Toàn cảnh</button>
+    <button class="btn alt" data-spec="join">Vào chơi</button>
   </nav>
 </div>
 
@@ -173,6 +193,9 @@ const CONFIG = {
   HEART_EVERY: 16, HEART_LIFE: 14, HEART_FULL_BONUS: 3,  // trái tim trên sân: trung bình 16 giây một lần, tồn tại 14 giây
   SERVER_URL: 'https://snake-ai.huskydg.io.vn',  // máy chủ chơi online
   VIEW: 21,                    // chế độ online: số ô nhìn thấy mỗi chiều
+  SPEC_VIEW: 25,               // khán giả (chế độ theo dõi 1 người): số ô nhìn thấy mỗi chiều
+  SOCKET_LIB_LOCAL: 'socket_io_min.js',                           // thư viện Socket.IO cùng thư mục (ưu tiên)
+  SOCKET_LIB_CDN: 'https://cdn.socket.io/4.8.4/socket.io.min.js', // dự phòng
                     // số tim ban đầu
   POINTS: 10,                  // điểm khi ăn đúng
   STREAK_BONUS: 2,             // thưởng thêm cho mỗi câu đúng liên tiếp
@@ -219,7 +242,7 @@ const vib = (ms) => { try { navigator.vibrate && navigator.vibrate(ms); } catch 
 
 const cv = $('cv'), ctx = cv.getContext('2d');
 const wrap = $('wrap'), stage = $('stage'), ov = $('ov'), toastEl = $('toast');
-let CELL = 24;
+let CELL = 24, dprCap = 2;   // dprCap: giới hạn độ phân giải canvas (tự giảm nếu máy yếu)
 
 /* ================= Âm thanh ================= */
 let ac = null, soundOn = store.get(K.sound, true);
@@ -464,6 +487,7 @@ function startHtml(msg, kind) {
     ${note}
     <button class="btn big" data-act="start" data-primary>Chơi một mình</button>
     <button class="btn big" data-act="online" style="margin-top:10px;background:#8be0ff">Chơi online cùng bạn bè</button>
+    <button class="btn big" data-act="spectate" style="margin-top:10px;background:#c7f9cc">Xem trực tiếp (khán giả)</button>
     <div class="best"><span>Điểm cao nhất</span><b>${best}</b></div>
     ${hist.length ? `<ol class="top">${hist.map((h) => `<li>${h.s} điểm<small>${new Date(h.d).toLocaleDateString('vi-VN')}</small></li>`).join('')}</ol>` : ''}
     <p class="mini">Hiện có ${Q.length} câu hỏi. Vuốt trên màn hình hoặc dùng nút mũi tên để đổi hướng.</p>
@@ -514,7 +538,8 @@ ov.addEventListener('click', (e) => {
     case 'home': if (mode === 'online') leaveOnline(); else showStart(); break;
     case 'online': showNameCard(); break;
     case 'join': joinClick(); break;
-    case 'cancel': restoreOffline(); showNameCard(); break;
+    case 'spectate': spectateClick(); break;
+    case 'cancel': { const wasSpec = net.spec; restoreOffline(); if (wasSpec) showStart(); else showNameCard(); break; }
   }
 });
 
@@ -526,6 +551,13 @@ document.querySelectorAll('#pad button').forEach((b) => {
 window.addEventListener('keydown', (e) => {
   if (e.target && e.target.tagName === 'INPUT') { if (e.key === 'Enter') joinClick(); return; }
   const k = e.key;
+  if (mode === 'online' && net.spec) {
+    if (!ov.hidden) return;
+    if (k === 'ArrowLeft' || k === 'a' || k === 'A') { e.preventDefault(); specCycle(-1); }
+    else if (k === 'ArrowRight' || k === 'd' || k === 'D') { e.preventDefault(); specCycle(1); }
+    else if (k === ' ' || k === 'f' || k === 'F') { e.preventDefault(); specToggle(); }
+    return;
+  }
   const map = { ArrowUp: 'up', w: 'up', W: 'up', ArrowDown: 'down', s: 'down', S: 'down', ArrowLeft: 'left', a: 'left', A: 'left', ArrowRight: 'right', d: 'right', D: 'right' };
   if (map[k]) { e.preventDefault(); const d = DIRS[map[k]]; setDir(d[0], d[1]); return; }
   if ((k === ' ' || k === 'p' || k === 'P') && ov.hidden) {
@@ -549,7 +581,12 @@ app.addEventListener('touchmove', (e) => {
 document.addEventListener('gesturestart', (e) => e.preventDefault());
 document.addEventListener('visibilitychange', () => { if (!document.hidden) return; if (mode === 'online') netMenu(); else pause(); });
 
-$('btnPause').addEventListener('click', (e) => { e.currentTarget.blur(); if (mode === 'online') return netMenu(); if (state === 'play') pause(); else if (state === 'pause') resume(); });
+$('btnPause').addEventListener('click', (e) => { e.currentTarget.blur(); if (mode === 'online') return net.spec ? leaveOnline() : netMenu(); if (state === 'play') pause(); else if (state === 'pause') resume(); });
+$('specbar').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-spec]'); if (!b) return; b.blur();
+  const k = b.dataset.spec;
+  if (k === 'prev') specCycle(-1); else if (k === 'next') specCycle(1); else if (k === 'mode') specToggle(); else if (k === 'join') specJoin();
+});
 $('btnSound').addEventListener('click', (e) => { e.currentTarget.blur(); soundOn = !soundOn; store.set(K.sound, soundOn); paintSound(); ensureAudio(); if (soundOn) sfx('ok'); });
 
 /* ================= Toàn màn hình ================= */
@@ -579,7 +616,7 @@ function fit() {
   const cell = Math.max(10, Math.floor(avail / VC));
   const css = cell * VC;
   wrap.style.width = css + 'px'; wrap.style.height = css + 'px';
-  const dpr = Math.min(window.devicePixelRatio || 1, 3);
+  const dpr = Math.min(window.devicePixelRatio || 1, dprCap);
   cv.width = Math.round(css * dpr); cv.height = Math.round(css * dpr);
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   CELL = cell;
@@ -611,19 +648,26 @@ function drawHeart(px, py, ts, left, k) {
   ctx.fill(HEART_PATH); ctx.stroke(HEART_PATH); ctx.restore();
 }
 function paintSnake(pts, d, col, ts, alpha) {
-  const c = CELL, bw = c * 0.76, ol = c * 0.13;
+  const c = CELL, bw = c * 0.76, ol = c * 0.13, n = pts.length;
   const linked = (i) => Math.abs(pts[i].x - pts[i + 1].x) <= c * 1.6 && Math.abs(pts[i].y - pts[i + 1].y) <= c * 1.6;
-  ctx.save(); ctx.globalAlpha = alpha;
-  const pass = (w, colr) => {
-    ctx.strokeStyle = colr; ctx.fillStyle = colr; ctx.lineWidth = w; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-    for (let i = 0; i < pts.length; i++) {
-      ctx.beginPath(); ctx.arc(pts[i].x, pts[i].y, w / 2, 0, Math.PI * 2); ctx.fill();
-      if (i < pts.length - 1 && linked(i)) { ctx.beginPath(); ctx.moveTo(pts[i].x, pts[i].y); ctx.lineTo(pts[i + 1].x, pts[i + 1].y); ctx.stroke(); }
+  // Cả thân rắn là MỘT đường path (thay vì mỗi đốt một lần vẽ) nên nhanh hơn nhiều khi có nhiều rắn.
+  const trace = () => {
+    ctx.beginPath();
+    let open = false;
+    for (let i = 0; i < n; i++) {
+      const p = pts[i];
+      if (!open) { ctx.moveTo(p.x, p.y); open = true; if (i === n - 1 || !linked(i)) ctx.lineTo(p.x, p.y); }
+      else ctx.lineTo(p.x, p.y);
+      if (i < n - 1 && !linked(i)) open = false;
     }
   };
-  pass(bw + ol * 2, INK); pass(bw, col);
-  ctx.fillStyle = 'rgba(255,255,255,.4)';
-  for (let i = 2; i < pts.length; i += 2) { ctx.beginPath(); ctx.arc(pts[i].x, pts[i].y, c * 0.13, 0, Math.PI * 2); ctx.fill(); }
+  ctx.save(); ctx.globalAlpha = alpha; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  trace(); ctx.lineWidth = bw + ol * 2; ctx.strokeStyle = INK; ctx.stroke();
+  trace(); ctx.lineWidth = bw; ctx.strokeStyle = col; ctx.stroke();
+  const dr = c * 0.13;
+  ctx.fillStyle = 'rgba(255,255,255,.4)'; ctx.beginPath();
+  for (let i = 2; i < n; i += 2) { ctx.moveTo(pts[i].x + dr, pts[i].y); ctx.arc(pts[i].x, pts[i].y, dr, 0, Math.PI * 2); }
+  ctx.fill();
   const h = pts[0], px = -d.y, py = d.x;
   if (Math.floor(ts / 450) % 3 === 0) {
     ctx.strokeStyle = '#ff3d5a'; ctx.lineWidth = c * 0.08; ctx.lineCap = 'round';
@@ -661,72 +705,187 @@ function draw(ts, prog) {
 }
 
 /* ================= Chế độ online ================= */
-const net = { sock: null, id: 0, W: 40, tick: 150, joined: false, name: '', cur: null, prev: null, t: 0, cam: [0, 0], feed: [], q: null, q2: [], rk: null, lastDraw: 0 };
+/* Chống giật: server gửi "ảnh chụp" (snapshot) mỗi tick. Client không vẽ ngay ảnh mới nhất mà phát lại
+   chậm hơn một khoảng D (bộ đệm jitter, tự co giãn theo độ trễ mạng đo được), nội suy giữa 2 ảnh theo
+   đường đi của rắn, và nếu hết dữ liệu thì ngoại suy tiếp theo hướng đang đi thay vì đứng hình. */
+const net = {
+  sock: null, id: 0, W: 40, tick: 150, ir: 14, joined: false, everJoined: false, name: '', onConnect: null,
+  spec: false, overview: false, follow: null, camId: 0, roster: [], specTxt: '',
+  q2: [], offs: [], gaps: [], base: 0, D: 300, bump: 0, rk: null, lastDraw: 0, lastRecv: 0, lastK: 0, lastUnder: 0,
+  cam: [0, 0], feed: [], q: null, rtt: 0, ackT: 0, ema: 16, emaT: 0, qCheck: 0, tv: '', everSet: false
+};
 const wrapD = (d, W) => ((d + W / 2) % W + W) % W - W / 2;
+const EXTRA = 1.5;   // tối đa bao nhiêu tick ngoại suy khi hết dữ liệu
+const VIRT = 2;      // số ô "ảo" thêm phía trước đầu rắn để ngoại suy
 
-function interp(p, prevSnap, prog, W) {
-  const pv = prevSnap && prevSnap.s.find((q) => q[0] === p[0]);
-  const f = p[3], o = pv ? pv[3] : null, pts = [];
-  for (let k = 0; k < f.length; k += 2) {
-    let dx = 0, dy = 0;
-    if (o && o[k] !== undefined) {
-      dx = f[k] - o[k]; dy = f[k + 1] - o[k + 1];
-      if (Math.abs(dx) > 1) dx += dx > 0 ? -W : W;
-      if (Math.abs(dy) > 1) dy += dy > 0 ? -W : W;
-      if (Math.abs(dx) > 1 || Math.abs(dy) > 1) { dx = 0; dy = 0; }
-    }
-    pts.push([f[k] - dx * (1 - prog), f[k + 1] - dy * (1 - prog)]);
+/* ---- bộ đệm jitter ---- */
+function updateClock() {
+  const o = net.offs; let mn = Infinity;
+  for (let i = 0; i < o.length; i++) if (o[i] < mn) mn = o[i];
+  net.base = mn;
+  const dv = o.map((v) => v - mn).sort((a, b) => a - b);
+  const jit = dv[Math.min(dv.length - 1, Math.floor(dv.length * 0.9))];
+  let gap = 1; for (const g of net.gaps) if (g > gap) gap = g;
+  net.bump *= 0.985;
+  const need = Math.min(net.tick * 14, Math.max(net.tick * 1.3, jit + net.tick * (1.1 + (gap - 1)) + net.bump));
+  net.D += (need - net.D) * (need > net.D ? 0.6 : 0.03);   // tăng nhanh, giảm từ từ
+}
+function onState(d) {
+  const t = now(), q = net.q2, last = q.length ? q[q.length - 1] : null;
+  if (last) {
+    if (d.k === last.k) return;
+    if (d.k < last.k) { net.q2 = []; net.offs = []; net.gaps = []; net.rk = null; }   // server khởi động lại
+    else { net.gaps.push(d.k - last.k); if (net.gaps.length > 8) net.gaps.shift(); }
   }
+  d.at = t; d.m = null; net.lastRecv = t; net.lastK = d.k;
+  net.q2.push(d); if (net.q2.length > 40) net.q2.shift();
+  net.offs.push(t - d.k * net.tick); if (net.offs.length > 80) net.offs.shift();
+  updateClock();
+  const tv = d.r[1] ? Math.ceil(d.r[2]) + 's' : 'Nghỉ';
+  if (tv !== net.tv) { net.tv = tv; $('timeV').textContent = tv; }
+  if (net.spec) {
+    net.roster = d.s.map((p) => [p[0], p[1], p[7], p[6]]).sort((a, b) => a[0] - b[0]);
+  } else {
+    const m = d.s.find((p) => p[0] === net.id);
+    if (m && (m[6] !== hearts || m[7] !== score)) { hearts = m[6]; score = m[7]; if (score > best) best = score; updateHud(); }
+  }
+}
+function advanceClock(ts) {
+  const q = net.q2; if (!q.length) return null;
+  const dt = net.lastDraw ? Math.min(100, ts - net.lastDraw) : 0; net.lastDraw = ts;
+  const tick = net.tick, last = q[q.length - 1];
+  const target = (ts - net.base) / tick - net.D / tick;
+  if (net.rk === null || Math.abs(target - net.rk) > 10) net.rk = target;
+  else net.rk += dt / tick * (1 + Math.max(-0.3, Math.min(0.3, (target - net.rk) * 0.12)));
+  if (net.rk > last.k + 0.25 && ts - net.lastUnder > 500) { net.lastUnder = ts; net.bump = Math.min(net.tick * 10, net.bump + tick * 0.6); }  // hết dữ liệu: nới bộ đệm
+  if (net.rk > last.k + EXTRA) net.rk = last.k + EXTRA;
+  if (net.rk < q[0].k) net.rk = q[0].k;
+  let a = null, b = null;
+  for (let i = 0; i < q.length; i++) { if (q[i].k <= net.rk) a = q[i]; else { b = q[i]; break; } }
+  return { a, b, rk: net.rk };
+}
+
+/* ---- nội suy theo đường đi ---- */
+function snapMap(sn) { if (!sn.m) { sn.m = new Map(); for (const p of sn.s) sn.m.set(p[0], p); } return sn.m; }
+// Đường đi P = n ô đầu của preF nối với toàn bộ postF. Đầu rắn ở vị trí h, đuôi ở vị trí t (chỉ số thực trên P).
+function walk(preF, n, postF, h, t) {
+  const W = net.W, total = n + postF.length / 2, pts = [];
+  const cx = (i) => (i < n ? preF[2 * i] : postF[2 * (i - n)]);
+  const cy = (i) => (i < n ? preF[2 * i + 1] : postF[2 * (i - n) + 1]);
+  const at = (f) => {
+    let i0 = Math.floor(f); const u = f - i0;
+    if (i0 < 0) i0 = 0;
+    if (i0 >= total - 1) return [cx(total - 1), cy(total - 1)];
+    const x0 = cx(i0), y0 = cy(i0);
+    return [x0 + wrapD(cx(i0 + 1) - x0, W) * u, y0 + wrapD(cy(i0 + 1) - y0, W) * u];
+  };
+  if (t < h) t = h;
+  let guard = 0;
+  for (let f = h; f < t && guard < 200; f += 1, guard++) pts.push(at(f));
+  pts.push(at(t));
   return pts;
 }
-
-function pickFrame(ts) {
-  const q = net.q2; if (!q.length) return null;
-  const last = q[q.length - 1].k;
-  const dt = net.lastDraw ? Math.min(100, ts - net.lastDraw) : 0; net.lastDraw = ts;
-  const target = last - 1.5;                       // phát trễ 1.5 tick để hấp thụ độ trễ mạng
-  if (net.rk === null || Math.abs(target - net.rk) > 6) net.rk = target;
-  net.rk += dt / net.tick * (1 + Math.max(-0.4, Math.min(0.4, (target - net.rk) * 0.15)));
-  net.rk = Math.min(net.rk, last);
-  const k0 = Math.floor(net.rk); let a = null, b = null;
-  for (const sn of q) { if (sn.k <= k0) a = sn; if (sn.k >= k0 + 1) { b = sn; break; } }
-  if (!b) return { a: q.length > 1 ? q[q.length - 2] : null, b: q[q.length - 1], prog: 1 };
-  if (!a) return { a: null, b, prog: 1 };
-  return { a, b, prog: Math.min(1, Math.max(0, (net.rk - a.k) / (b.k - a.k))) };
+function sampleSnake(pa, pb, rk, A, B) {
+  if (pa && pb) {
+    const n = B.k - A.k, fa = pa[3], fb = pb[3];
+    if (n >= 1 && n <= 16 && fb.length >= 2 * n + 2 && fb[2 * n] === fa[0] && fb[2 * n + 1] === fa[1]) {
+      const u = Math.min(1, Math.max(0, (rk - A.k) / n)), LA = fa.length / 2, LB = fb.length / 2;
+      const h = n - u * n, t = (n + LA - 1) + ((LB - 1) - (n + LA - 1)) * u;
+      return { pts: walk(fb, n, fa, h, t), d: u > 0.5 ? pb : pa };
+    }
+    const src = (rk - A.k) < (B.k - A.k) / 2 ? pa : pb;   // rắn vừa hồi sinh/đổi đường: nhảy thẳng
+    return { pts: walk([], 0, src[3], 0, src[3].length / 2 - 1), d: src };
+  }
+  if (pb) return { pts: walk([], 0, pb[3], 0, pb[3].length / 2 - 1), d: pb };
+  const W = net.W, e = Math.min(EXTRA, Math.max(0, rk - A.k)), fa = pa[3], dx = pa[4], dy = pa[5], pre = [];
+  for (let i = 0; i < VIRT; i++) { const m = VIRT - i; pre.push(((fa[0] + dx * m) % W + W) % W, ((fa[1] + dy * m) % W + W) % W); }
+  return { pts: walk(pre, VIRT, fa, VIRT - e, VIRT + fa.length / 2 - 1 - e), d: pa };
+}
+function pickFollow(list) {
+  if (net.follow !== null && list.some((o) => o.p[0] === net.follow)) return net.follow;
+  let top = null; for (const o of list) if (!top || o.p[7] > top.p[7]) top = o;
+  return top ? top.p[0] : 0;
 }
 
+/* ---- thông báo mạng + đo hiệu năng ---- */
+let netBarMsg = '';
+function setNetBar(msg) { if (msg === netBarMsg) return; netBarMsg = msg; const e = $('netbar'); e.textContent = msg; e.hidden = !msg; }
+function paintPing() {
+  const e = $('pingV'), p = $('pingPill'), v = Math.round(net.rtt);
+  e.textContent = v + ' ms'; p.className = 'pill online-only' + (v > 400 ? ' bad' : v > 200 ? ' mid' : '');
+}
+function startAck() {
+  stopAck();
+  net.ackT = setInterval(() => {   // báo tick đã nhận để server điều tiết, đồng thời đo ping
+    const s = net.sock; if (!s || !s.connected) return;
+    const t = now();
+    s.emit('ack', { k: net.lastK }, () => { const r = now() - t; net.rtt = net.rtt ? net.rtt * 0.7 + r * 0.3 : r; paintPing(); });
+  }, 400);
+}
+function stopAck() { if (net.ackT) { clearInterval(net.ackT); net.ackT = 0; } }
+function frameStats(ts) {
+  if (net.emaT) net.ema += (Math.min(100, ts - net.emaT) - net.ema) * 0.05;
+  net.emaT = ts;
+  if (ts - net.qCheck > 2500) {   // máy yếu: tự giảm độ phân giải canvas cho đỡ giật
+    net.qCheck = ts;
+    if (net.ema > 28 && dprCap > 1) { dprCap = Math.max(1, dprCap - 0.5); fit(); }
+  }
+  const gap = ts - net.lastRecv;
+  if (net.joined && net.lastRecv && gap > 1800) setNetBar('Mạng yếu, đang chờ dữ liệu...');
+  else if (net.joined && netBarMsg.indexOf('Mạng yếu') === 0) setNetBar('');
+}
+
+/* ---- vẽ ---- */
 function drawOnline(ts) {
-  const fr = pickFrame(ts), snap = fr && fr.b, c = CELL, V = VC, W = net.W, half = (V - 1) / 2, size = c * V;
+  frameStats(ts);
+  const fr = advanceClock(ts), c = CELL, V = VC, W = net.W, size = c * V;
   ctx.clearRect(0, 0, size, size);
-  if (!snap) return;
-  const prog = fr.prog;
-  const list = snap.s.map((p) => ({ p, pts: interp(p, fr.a, prog, W) }));
-  const me = list.find((o) => o.p[0] === net.id);
-  if (me) net.cam = me.pts[0];
-  const cx = net.cam[0], cy = net.cam[1];
-  const P = (x, y) => [(half + 0.5 + wrapD(x - cx, W)) * c, (half + 0.5 + wrapD(y - cy, W)) * c];
-  const x0 = Math.floor(cx) - half - 1, y0 = Math.floor(cy) - half - 1;
-  for (let j = 0; j < V + 3; j++) for (let i = 0; i < V + 3; i++) {
-    const wx = x0 + i, wy = y0 + j, q = P(wx, wy);
-    ctx.fillStyle = (wx + wy) & 1 ? '#e3f2ff' : '#f1f9ff';
-    ctx.fillRect(q[0] - c / 2, q[1] - c / 2, c + 0.6, c + 0.6);
+  if (!fr) return;
+  const A = fr.a, B = fr.b, base = A || B, ov = net.spec && net.overview, list = [];
+  const mA = A ? snapMap(A) : null;
+  if (B) for (const pb of B.s) list.push({ p: pb, o: sampleSnake(mA ? mA.get(pb[0]) : null, pb, fr.rk, A, B) });
+  else for (const pa of A.s) list.push({ p: pa, o: sampleSnake(pa, null, fr.rk, A, null) });
+  const camId = net.spec ? pickFollow(list) : net.id;
+  net.camId = camId;
+  const me = list.find((o) => o.p[0] === camId);
+  if (me) net.cam = me.o.pts[0];
+  const half = (V - 1) / 2, cx = net.cam[0], cy = net.cam[1];
+  let P;
+  if (ov) {
+    P = (x, y) => [(((x % W) + W) % W + 0.5) * c, (((y % W) + W) % W + 0.5) * c];
+    for (let j = 0; j < W; j++) for (let i = 0; i < W; i++) { ctx.fillStyle = (i + j) & 1 ? '#e3f2ff' : '#f1f9ff'; ctx.fillRect(i * c, j * c, c, c); }
+  } else {
+    P = (x, y) => [(half + 0.5 + wrapD(x - cx, W)) * c, (half + 0.5 + wrapD(y - cy, W)) * c];
+    const x0 = Math.floor(cx) - half - 1, y0 = Math.floor(cy) - half - 1;
+    for (let j = 0; j < V + 3; j++) for (let i = 0; i < V + 3; i++) {
+      const wx = x0 + i, wy = y0 + j, q = P(wx, wy);
+      ctx.fillStyle = (wx + wy) & 1 ? '#e3f2ff' : '#f1f9ff';
+      ctx.fillRect(q[0] - c / 2, q[1] - c / 2, c + 0.6, c + 0.6);
+    }
   }
   const m = c * 0.75, clampP = (q) => [Math.min(size - m, Math.max(m, q[0])), Math.min(size - m, Math.max(m, q[1]))];
   const inView = (q) => q[0] >= 0 && q[1] >= 0 && q[0] <= size && q[1] <= size;
-  for (const hh of snap.hr) { const q = P(hh[0], hh[1]); inView(q) ? drawHeart(q[0], q[1], ts, hh[2]) : (() => { const e = clampP(q); drawHeart(e[0], e[1], ts, hh[2], 0.7); })(); }
-  for (const it of snap.it) { const q = P(it[1], it[2]); if (inView(q)) drawItem(q[0], q[1], it[0], ts); else { const e = clampP(q); drawItem(e[0], e[1], it[0], ts, 0.7); } }
-  list.sort((a, b) => (a.p[0] === net.id) - (b.p[0] === net.id));
-  const fs = Math.max(11, Math.round(c * 0.5));
+  for (const hh of base.hr) { const q = P(hh[0], hh[1]); if (inView(q)) drawHeart(q[0], q[1], ts, hh[2]); else { const e = clampP(q); drawHeart(e[0], e[1], ts, hh[2], 0.7); } }
+  for (const it of base.it) { const q = P(it[1], it[2]); if (inView(q)) drawItem(q[0], q[1], it[0], ts); else { const e = clampP(q); drawItem(e[0], e[1], it[0], ts, 0.7); } }
+  list.sort((a, b) => (a.p[0] === camId) - (b.p[0] === camId));
+  const fs = Math.max(ov ? 9 : 11, Math.round(c * (ov ? 0.8 : 0.5)));
   for (const o of list) {
-    const pts = o.pts.map((q) => { const e = P(q[0], q[1]); return { x: e[0], y: e[1] }; });
-    paintSnake(pts, { x: o.p[4], y: o.p[5] }, PAL[o.p[2] % PAL.length], ts, o.p[8] && Math.floor(ts / 150) % 2 ? 0.4 : 1);
+    const pts = o.o.pts.map((q) => { const e = P(q[0], q[1]); return { x: e[0], y: e[1] }; });
+    if (!pts.some((q) => q.x > -2 * c && q.y > -2 * c && q.x < size + 2 * c && q.y < size + 2 * c)) continue;   // ngoài màn hình: khỏi vẽ
+    const d = o.o.d;
+    paintSnake(pts, { x: d[4], y: d[5] }, PAL[o.p[2] % PAL.length], ts, o.p[8] && Math.floor(ts / 150) % 2 ? 0.4 : 1);
     ctx.font = `800 ${fs}px ${FONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
-    ctx.lineWidth = 4; ctx.strokeStyle = '#fff'; ctx.strokeText(o.p[1], pts[0].x, pts[0].y - c * 0.85);
-    ctx.fillStyle = o.p[0] === net.id ? '#d6336c' : INK; ctx.fillText(o.p[1], pts[0].x, pts[0].y - c * 0.85);
+    const label = net.spec ? o.p[1] + ' ♥' + o.p[6] : o.p[1];
+    ctx.lineWidth = 4; ctx.strokeStyle = '#fff'; ctx.strokeText(label, pts[0].x, pts[0].y - c * 0.85);
+    ctx.fillStyle = (!ov && o.p[0] === camId) ? '#d6336c' : INK; ctx.fillText(label, pts[0].x, pts[0].y - c * 0.85);
+  }
+  if (net.spec) {
+    const txt = ov ? 'Toàn cảnh · ' + list.length + ' rắn đang chơi' : me ? me.p[1] + ' · ' + me.p[7] + ' điểm · ♥' + me.p[6] : 'Chưa có người chơi';
+    if (txt !== net.specTxt) { net.specTxt = txt; $('specName').textContent = txt; }
   }
   // bảng xếp hạng + tin nhanh
-  ctx.textAlign = 'left'; ctx.font = `800 ${fs}px ${FONT}`;
-  const lb = snap.lb;
+  ctx.textAlign = 'left'; ctx.font = `800 ${fs}px ${FONT}`; ctx.textBaseline = 'alphabetic';
+  const lb = base.lb;
   if (lb.length) {
     ctx.fillStyle = 'rgba(255,255,255,.82)'; rr(6, 6, fs * 10, fs * 1.3 * lb.length + 10, 10); ctx.fill();
     lb.forEach((r, i) => { ctx.fillStyle = INK; ctx.fillText((i + 1) + '. ' + r[0].slice(0, 10), 12, 6 + fs * 1.3 * (i + 1)); ctx.textAlign = 'right'; ctx.fillText(r[1], fs * 10, 6 + fs * 1.3 * (i + 1)); ctx.textAlign = 'left'; });
@@ -739,9 +898,34 @@ function drawOnline(ts) {
   });
 }
 
-function loadSocketLib() {
-  if (window.io) return Promise.resolve();
-  return new Promise((res, rej) => { const el = document.createElement('script'); el.src = 'https://cdn.socket.io/4.8.4/socket.io.min.js'; el.onload = res; el.onerror = rej; document.head.appendChild(el); });
+/* ---- kết nối ---- */
+let serverP = null;
+// Nếu trang này do chính main.py phục vụ (chạy nội bộ) thì nối thẳng về cùng địa chỉ; ngược lại dùng CONFIG.SERVER_URL.
+function resolveServer() {
+  if (serverP) return serverP;
+  serverP = (async () => {
+    let failed = false, url = CONFIG.SERVER_URL;
+    if (/^https?:$/.test(location.protocol)) {
+      try {
+        const ctl = 'AbortController' in window ? new AbortController() : null;
+        const kill = setTimeout(() => { if (ctl) ctl.abort(); }, 2500);
+        const r = await fetch(new URL('health', location.href).href, { cache: 'no-store', signal: ctl ? ctl.signal : undefined });
+        clearTimeout(kill);
+        if (r.ok && (await r.text()).trim() === 'ok') url = location.origin;
+      } catch (e) { failed = true; }
+    }
+    if (failed) serverP = null;   // lỗi tạm thời: lần sau thử lại
+    return url;
+  })();
+  return serverP;
+}
+function loadScript(src) { return new Promise((res, rej) => { const el = document.createElement('script'); el.src = src; el.onload = res; el.onerror = rej; document.head.appendChild(el); }); }
+async function loadSocketLib() {
+  if (window.io) return;
+  try { await loadScript(CONFIG.SOCKET_LIB_LOCAL); } catch (e) {}   // ưu tiên bản cùng thư mục (chạy được cả khi không có Internet)
+  if (window.io) return;
+  await loadScript(CONFIG.SOCKET_LIB_CDN);
+  if (!window.io) throw new Error('no socket.io');
 }
 function nameCardHtml(msg) {
   return `<div class="card">${LOGO}<h2>Chơi online</h2>
@@ -749,7 +933,7 @@ function nameCardHtml(msg) {
     ${msg ? `<div class="note bad">${esc(msg)}</div>` : ''}
     <input id="nameIn" class="inp" maxlength="16" autocomplete="off" placeholder="Tên của em (2-16 ký tự)" value="${esc(store.get(K.name, ''))}">
     <button class="btn big" data-act="join" data-primary style="margin-top:10px">Vào chơi</button>
-    <div class="row"><button class="btn alt" data-act="home">Quay lại</button></div>
+    <div class="row"><button class="btn alt" data-act="spectate">Chỉ xem (khán giả)</button><button class="btn alt" data-act="home">Quay lại</button></div>
     <p class="mini">Ăn đúng đáp án trước mọi người để lấy điểm. Cắn trúng rắn khác bị trừ điểm và mất 1 tim.</p></div>`;
 }
 function waitHtml(msg) { return `<div class="card"><h2>${esc(msg)}</h2><div class="row"><button class="btn alt" data-act="cancel">Hủy</button></div></div>`; }
@@ -760,7 +944,7 @@ function menuHtml() {
 }
 function deadHtml() {
   return `<div class="card"><h2>Hết tim rồi!</h2><div class="bigscore">${score}</div><p>Điểm cao nhất của em: ${best}</p>
-    <div class="row"><button class="btn big" data-act="again" data-primary>Chơi lại</button><button class="btn alt" data-act="home">Thoát</button></div></div>`;
+    <div class="row"><button class="btn big" data-act="again" data-primary>Chơi lại</button><button class="btn alt" data-act="spectate">Xem tiếp</button><button class="btn alt" data-act="home">Thoát</button></div></div>`;
 }
 function showNameCard(msg) { showOverlay(nameCardHtml(msg)); const i = $('nameIn'); if (i) { try { i.focus(); } catch (e) {} } }
 
@@ -768,9 +952,14 @@ function setQuestion(text, opts, right) {
   $('qtext').textContent = text;
   $('answers').innerHTML = opts.map((t, i) => `<div class="ans c${i}${right === undefined ? '' : (right === i ? ' right' : ' dim')}"><b>${LETTERS[i]}</b><span>${esc(t)}</span></div>`).join('');
 }
+const PAUSE_SVG = $('btnPause').innerHTML;
+const EXIT_SVG = '<svg viewBox="0 0 24 24"><path class="ln" d="M6 6l12 12M18 6L6 18"/></svg>';
 function netStop() {
+  stopAck(); setNetBar('');
   if (net.sock) { net.sock.removeAllListeners(); net.sock.disconnect(); net.sock = null; }
-  net.joined = false; mode = 'offline'; $('app').classList.remove('net');
+  Object.assign(net, { joined: false, everJoined: false, spec: false, follow: null, specTxt: '', roster: [], q2: [], offs: [], gaps: [], rk: null, rtt: 0, tv: '' });
+  mode = 'offline'; $('app').classList.remove('net', 'spec');
+  $('btnPause').innerHTML = PAUSE_SVG; $('btnPause').setAttribute('aria-label', 'Tạm dừng');
   VC = COLS; VR = ROWS; maxHearts = CONFIG.HEARTS_MAX; hearts = CONFIG.HEARTS; score = 0; best = store.get(K.best, 0);
   state = 'idle'; fit(); updateHud();
 }
@@ -778,27 +967,23 @@ function restoreOffline() { netStop(); $('qexp').hidden = true; resetSnake(); ne
 function leaveOnline() {
   let done = false;
   const fin = () => { if (done) return; done = true; restoreOffline(); showStart(); };
-  if (net.sock && net.joined) { net.sock.emit('leave', null, fin); setTimeout(fin, 700); } else fin();
+  if (net.sock && net.joined) { net.sock.emit(net.spec ? 'unspectate' : 'leave', null, fin); setTimeout(fin, 700); } else fin();
 }
-function joinClick() {
-  const inp = $('nameIn'); if (!inp) return;
-  const name = inp.value.replace(/\s+/g, ' ').trim();
-  if (name.length < 2) return showNameCard('Tên quá ngắn (tối thiểu 2 ký tự)');
-  store.set(K.name, name); net.name = name;
-  showOverlay(waitHtml('Đang kết nối máy chủ...'));
-  loadSocketLib().then(() => {
+function resetPlayback(r) {
+  Object.assign(net, { W: r.W, tick: r.tick, ir: r.ir || 14, joined: true, everJoined: true, q2: [], offs: [], gaps: [], base: 0,
+    D: r.tick * 2, bump: 0, rk: null, lastDraw: 0, lastRecv: 0, lastK: 0, lastUnder: 0, feed: [], tv: '' });
+  setNetBar(''); startAck();
+}
+// Mở kết nối Socket.IO rồi gọi onConnect mỗi lần (kể cả lúc tự nối lại) kết nối thành công.
+function openSocket(onConnect, onFail) {
+  net.onConnect = onConnect;
+  Promise.all([loadSocketLib(), resolveServer()]).then(([, url]) => {
     if (net.sock) { net.sock.removeAllListeners(); net.sock.disconnect(); }
-    const s = net.sock = io(CONFIG.SERVER_URL, { transports: ['websocket', 'polling'], reconnectionDelayMax: 3000 });
-    s.on('connect', doJoin);
-    s.on('connect_error', () => { if (!net.joined) showOverlay(waitHtml('Chưa kết nối được máy chủ, đang thử lại...')); });
-    s.on('disconnect', () => { if (net.joined) { net.joined = false; state = 'idle'; showOverlay(waitHtml('Mất kết nối, đang kết nối lại...')); } });
-    s.on('state', (d) => {
-      const ql = net.q2.length; if (ql && d.k < net.q2[ql - 1].k) { net.q2 = []; net.rk = null; }
-      net.q2.push(d); if (net.q2.length > 30) net.q2.shift();
-      const m = d.s.find((p) => p[0] === net.id);
-      if (m && (m[6] !== hearts || m[7] !== score)) { hearts = m[6]; score = m[7]; if (score > best) best = score; updateHud(); }
-      $('timeV').textContent = d.r[1] ? Math.ceil(d.r[2]) + 's' : 'Nghỉ';
-    });
+    const s = net.sock = io(url, { transports: ['websocket', 'polling'], reconnectionDelayMax: 3000, timeout: 8000 });
+    s.on('connect', () => { if (net.onConnect) net.onConnect(); });
+    s.on('connect_error', () => { if (!net.everJoined) showOverlay(waitHtml('Chưa kết nối được máy chủ, đang thử lại...')); else setNetBar('Mất kết nối, đang nối lại...'); });
+    s.on('disconnect', () => { if (net.joined) { net.joined = false; setNetBar('Mất kết nối, đang nối lại...'); } });   // không chặn màn hình: rắn vẫn chạy tiếp bằng ngoại suy
+    s.on('state', onState);
     s.on('question', (d) => { net.q = d; $('qexp').hidden = true; setQuestion(d.question, d.options); });
     s.on('round_end', (d) => {
       if (net.q) setQuestion(net.q.question, net.q.options, d.correct);
@@ -810,20 +995,61 @@ function joinClick() {
     s.on('ev', onEv);
     s.on('afk', () => { state = 'pause'; showOverlay(menuHtml()); });
     s.on('kicked', (d) => { restoreOffline(); showStart((d && d.reason) || 'Bạn đã bị ngắt kết nối', 'bad'); });
-  }).catch(() => { restoreOffline(); showNameCard('Không tải được thư viện online. Hãy kiểm tra mạng.'); });
+  }).catch(() => { onFail(); });
+}
+function joinClick() {
+  const inp = $('nameIn'); if (!inp) return;
+  const name = inp.value.replace(/\s+/g, ' ').trim();
+  if (name.length < 2) return showNameCard('Tên quá ngắn (tối thiểu 2 ký tự)');
+  store.set(K.name, name); net.name = name; net.spec = false;
+  showOverlay(waitHtml('Đang kết nối máy chủ...'));
+  openSocket(doJoin, () => { restoreOffline(); showNameCard('Không tải được thư viện online. Hãy kiểm tra mạng.'); });
 }
 function doJoin() {
   let tok = store.get(K.token, '');
   if (!tok) { tok = Math.random().toString(36).slice(2) + Date.now().toString(36); store.set(K.token, tok); }
   net.sock.emit('join', { name: net.name, token: tok }, (r) => {
     if (!r || !r.ok) { const msg = (r && r.error) || 'Không vào được phòng'; restoreOffline(); showNameCard(msg); return; }
-    Object.assign(net, { id: r.id, W: r.W, tick: r.tick, joined: true, q2: [], rk: null, lastDraw: 0, feed: [] });
-    mode = 'online'; $('app').classList.add('net');
+    resetPlayback(r); net.id = r.id; net.spec = false;
+    mode = 'online'; $('app').classList.add('net'); $('app').classList.remove('spec');
     maxHearts = r.heartsMax; hearts = r.hearts; score = r.score; best = r.best;
-    VC = VR = CONFIG.VIEW; fit(); updateHud();
+    VC = VR = Math.min(CONFIG.VIEW, 2 * (net.ir - 4) + 1); fit(); updateHud();
     if (r.dead) { state = 'over'; showOverlay(deadHtml()); } else { state = 'play'; hideOverlay(); }
   });
 }
+
+/* ---- chế độ khán giả ---- */
+function spectateClick() {
+  if (net.sock && net.joined && !net.spec) { try { net.sock.emit('leave'); } catch (e) {} }   // đang là người chơi (vd hết tim): rời phòng rồi xem
+  if (net.sock) netStop();
+  net.spec = true;
+  showOverlay(waitHtml('Đang kết nối máy chủ...'));
+  openSocket(doSpectate, () => { restoreOffline(); showStart('Không tải được thư viện online. Hãy kiểm tra mạng.', 'bad'); });
+}
+function doSpectate() {
+  net.sock.emit('spectate', null, (r) => {
+    if (!r || !r.ok) { const msg = (r && r.error) || 'Không vào xem được'; restoreOffline(); showStart(msg, 'bad'); return; }
+    resetPlayback(r); net.id = 0; net.spec = true; net.camId = 0; net.specTxt = '';
+    if (net.follow === null && !net.everSet) { net.overview = Math.min(stage.clientWidth, stage.clientHeight) >= 520; net.everSet = true; }
+    mode = 'online'; $('app').classList.add('net', 'spec');
+    $('btnPause').innerHTML = EXIT_SVG; $('btnPause').setAttribute('aria-label', 'Thoát chế độ xem');
+    maxHearts = r.heartsMax;
+    paintSpecMode(); state = 'watch'; hideOverlay();
+  });
+}
+function paintSpecMode() {
+  VC = VR = net.overview ? net.W : CONFIG.SPEC_VIEW; fit();
+  $('specMode').textContent = net.overview ? 'Theo dõi 1 người' : 'Toàn cảnh'; net.specTxt = '';
+}
+function specCycle(step) {
+  const ids = net.roster.map((r) => r[0]); if (!ids.length) return;
+  let i = ids.indexOf(net.camId); if (i < 0) i = 0; else i = (i + step + ids.length) % ids.length;
+  net.follow = ids[i];
+  if (net.overview) { net.overview = false; paintSpecMode(); }
+}
+function specToggle() { net.overview = !net.overview; paintSpecMode(); }
+function specJoin() { restoreOffline(); showNameCard(); }
+
 function onEv(e) {
   if (e.t === 'ok') { toast('Đúng rồi! +' + e.gain + (e.streak > 1 ? '  (liên tiếp ' + e.streak + ')' : ''), 'ok'); sfx('ok'); vib(20); }
   else if (e.t === 'wrong') { toast('Ăn nhầm đáp án ' + e.letter + '! -1 tim', 'bad'); shake(); sfx('bad'); vib(120); }
@@ -833,9 +1059,9 @@ function onEv(e) {
   else if (e.t === 'heartfull') { toast('Tim đã đầy: +' + e.pts + ' điểm', 'ok'); sfx('ok'); }
   else if (e.t === 'dead') { state = 'over'; score = e.score; best = Math.max(best, e.best || 0); updateHud(); sfx('over'); showOverlay(deadHtml()); }
 }
-function netDir(dx, dy) { if (net.sock && net.joined) net.sock.emit('dir', { x: dx, y: dy }); }
+function netDir(dx, dy) { if (net.sock && net.joined && !net.spec) net.sock.emit('dir', { x: dx, y: dy }); }
 function netMenu() {
-  if (state !== 'play' || !net.sock || !net.joined) return;
+  if (state !== 'play' || !net.sock || !net.joined || net.spec) return;
   net.sock.emit('away'); state = 'pause'; showOverlay(menuHtml());
 }
 function netBack() {
@@ -875,6 +1101,7 @@ function loop(ts) {
   fit();
   showStart();
   requestAnimationFrame(loop);
+  if (/^https?:$/.test(location.protocol)) resolveServer();
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js').catch(() => {});
   }

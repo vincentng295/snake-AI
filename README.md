@@ -28,7 +28,7 @@ snake-ai/
 ├── index.html            # Toàn bộ giao diện và logic game
 ├── question.json         # Bộ câu hỏi (sửa file này để thêm, đổi câu hỏi)
 ├── socket_io_min.js      # Thư viện Socket.IO (chỉ tải khi chơi online)
-├── main.py               # Máy chủ chơi online (Flask-SocketIO)
+├── main.py               # Máy chủ chơi online (Flask-SocketIO), đồng thời phục vụ luôn index.html để chạy nội bộ
 ├── requirements.txt
 ├── _env.example          # Mẫu cấu hình, copy thành .env
 ├── sw.js                 # Service worker, giúp game chạy offline
@@ -94,7 +94,7 @@ Một số lưu ý:
 Service worker ưu tiên dùng bản đã lưu để mở nhanh và chạy offline. Vì vậy sau khi sửa `index.html`, `question.json` hoặc file khác, hãy **tăng số phiên bản** trong `sw.js`:
 
 ```js
-const CACHE = 'snake-ai-v4';   // đổi thành snake-ai-v5, v6, ...
+const CACHE = 'snake-ai-v6';   // đổi thành snake-ai-v7, v8, ...
 ```
 
 Lần mở tiếp theo khi có mạng, thiết bị sẽ tải bản mới. Nếu chưa thấy thay đổi, hãy đóng hẳn ứng dụng rồi mở lại.
@@ -135,9 +135,52 @@ Các trình duyệt hiện đại như Safari (iPadOS, iOS 14 trở lên), Chrom
 
 Thỉnh thoảng có một trái tim xuất hiện trên sân (nhấp nháy khi sắp biến mất). Ăn để hồi 1 tim, tối đa 10 tim. Đã đủ tim thì được cộng điểm thưởng. Khi chơi một mình, các tham số `HEARTS`, `HEARTS_MAX`, `HEART_EVERY`, `HEART_LIFE` nằm trong `CONFIG`.
 
+## Chạy nội bộ (main.py phục vụ luôn index.html)
+
+Không cần Vercel hay Internet: `main.py` tự trả `index.html`, `sw.js`, `question.json`, `socket_io_min.js`, `manifest.webmanifest`, `icon-*.png` ngay tại `/`. Chỉ các file trong danh sách này được trả ra (`.env`, `snake.db`, `main.py` luôn trả 404).
+
+```bash
+# .env
+HOST=0.0.0.0     # để máy khác trong cùng Wi-Fi/LAN vào được (mặc định 127.0.0.1 chỉ máy này)
+PORT=8888
+python3 main.py
+```
+
+Khi khởi động, server in ra địa chỉ để mở, ví dụ `http://192.168.1.20:8888/`. Trang tự phát hiện đang được chính máy chủ game phục vụ (gọi `/health`) và nối Socket.IO thẳng về cùng địa chỉ, nên không cần sửa `CONFIG.SERVER_URL`. Nếu mở bằng Vercel/GitHub Pages thì vẫn dùng `SERVER_URL` như cũ.
+
+| Biến `.env` | Mặc định | Ý nghĩa |
+|---|---|---|
+| `SERVE_WEB` | `true` | `false`: chỉ chạy API/Socket.IO, không phục vụ giao diện |
+| `WEB_DIR` | thư mục `main.py` | Thư mục chứa `index.html` |
+| `WEB_EXTRA_FILES` | (trống) | Thêm file được phép trả ra, cách nhau bằng dấu phẩy (chỉ tên file, không có `/`) |
+
+Lưu ý: `http://192.168.x.x` không phải HTTPS nên service worker (offline) không chạy, nhưng game vẫn chơi bình thường. Muốn cài như ứng dụng hoặc offline thì mở qua `http://localhost:8888` hoặc qua tên miền Cloudflare Tunnel (HTTPS).
+
+## Chống lag, chống giật khi mạng yếu
+
+- **Server chỉ gửi vùng quanh người chơi** (`INTEREST_R`, mặc định 14 ô), mỗi lần gửi nhẹ hơn nhiều so với gửi cả bản đồ.
+- **Tự giảm tốc theo từng máy**: client báo `ack` mỗi 0,4 giây. Máy nào nhận chậm (trễ hơn `LAG_SOFT_MS`, mặc định 1500 ms) thì server gửi thưa đi (cách 2 hoặc 4 tick một lần) thay vì dồn hàng đợi gây trễ ngày càng nặng. State là ảnh chụp đầy đủ nên bỏ bớt không mất dữ liệu.
+- **Tắt thuật toán Nagle** (`TCP_NODELAY`) để gói nhỏ không bị gom chờ.
+- **Client phát lại có bộ đệm tự co giãn** theo độ trễ và độ giật mạng đo được; nội suy theo đường đi của rắn (kể cả khi ảnh cách nhau nhiều tick); hết dữ liệu thì rắn tiếp tục đi theo hướng cũ tối đa 1,5 tick thay vì đứng hình.
+- Mất kết nối tạm thời không còn chặn màn hình: chỉ hiện dải thông báo nhỏ rồi tự nối lại.
+- Vẽ nhanh hơn (cả thân rắn vẽ bằng một đường), bỏ qua rắn ngoài màn hình, tự giảm độ phân giải canvas nếu máy yếu.
+- Ô **Ping** trên màn hình cho biết độ trễ hiện tại.
+
+Cần giảm thêm: tăng `TICK_MS` (rắn chậm hơn nhưng nhẹ mạng hơn) hoặc giảm `MAX_PLAYERS`.
+
+## Chế độ khán giả
+
+Bấm **Xem trực tiếp (khán giả)** ở trang đầu (hoặc **Chỉ xem** ở màn hình nhập tên). Khán giả không có rắn, không chiếm chỗ trong phòng, không ảnh hưởng điểm số.
+
+- **Toàn cảnh**: thấy cả bản đồ 40x40 (hợp để chiếu lên máy chiếu). Màn hình nhỏ thì mặc định là chế độ theo dõi.
+- **Theo dõi 1 người**: camera đi theo một rắn, mặc định là người dẫn đầu; nút mũi tên chọn người khác.
+- Phím tắt: mũi tên trái/phải (hoặc A, D) đổi người; Space hoặc F đổi giữa toàn cảnh và theo dõi.
+- Nút **Vào chơi** để chuyển thành người chơi; dấu X để thoát.
+- Giới hạn: `MAX_SPECTATORS` (mặc định 200).
+
 ## Chơi online
 
-Trang tĩnh (Vercel) kết nối tới máy chủ `https://snake-ai.huskydg.io.vn` qua Socket.IO. Địa chỉ này nằm ở `CONFIG.SERVER_URL` trong `index.html`.
+Trang tĩnh (Vercel) kết nối tới máy chủ `https://snake-ai.huskydg.io.vn` qua Socket.IO. Địa chỉ này nằm ở `CONFIG.SERVER_URL` trong `index.html` (nếu trang do chính `main.py` phục vụ thì tự dùng địa chỉ đó). Thư viện Socket.IO được nạp từ `socket_io_min.js` cùng thư mục, chỉ khi thiếu mới tải từ CDN.
 
 - Nhập tên (2 đến 16 ký tự) để vào. Tên không được trùng (không phân biệt hoa thường, không dấu) với người đang chơi.
 - Cả phòng cùng thấy một câu hỏi. Ai ăn đáp án đúng trước được điểm, câu hỏi chuyển sang câu mới.
