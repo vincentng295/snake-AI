@@ -19,7 +19,7 @@
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 html,body{height:100%;margin:0;overflow:hidden;overscroll-behavior:none;background:var(--sky);color:var(--ink);
-  font-family:ui-rounded,"SF Pro Rounded","Nunito","Segoe UI",system-ui,-apple-system,sans-serif;font-weight:700;touch-action:manipulation}
+  font-family:ui-rounded,"SF Pro Rounded","Nunito","Segoe UI",system-ui,-apple-system,sans-serif;font-weight:700;touch-action:pan-x pan-y}
 button{font:inherit;color:inherit;cursor:pointer}
 button:focus-visible{outline:3px dashed var(--ink);outline-offset:3px}
 
@@ -579,6 +579,17 @@ app.addEventListener('touchmove', (e) => {
   }
 }, { passive: false });
 document.addEventListener('gesturestart', (e) => e.preventDefault());
+/* ---- Chặn thu phóng & chuột phải ---- */
+const noDefault = (e) => e.preventDefault();
+document.addEventListener('contextmenu', noDefault);                       // chuột phải / nhấn giữ
+['gesturestart', 'gesturechange', 'gestureend'].forEach((n) => document.addEventListener(n, noDefault));   // pinch trên Safari/iOS
+document.addEventListener('touchmove', (e) => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });   // pinch 2 ngón
+document.addEventListener('dblclick', noDefault);                          // chạm đúp để phóng to
+document.addEventListener('wheel', (e) => { if (e.ctrlKey) e.preventDefault(); }, { passive: false });     // Ctrl + lăn chuột / pinch touchpad
+document.addEventListener('keydown', (e) => {                              // Ctrl/Cmd + (+, -, 0)
+  if ((e.ctrlKey || e.metaKey) && ['+', '=', '-', '_', '0', 'Add', 'Subtract'].includes(e.key)) e.preventDefault();
+});
+document.addEventListener('dragstart', noDefault);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) return; if (mode === 'online') netMenu(); else pause(); });
 
 $('btnPause').addEventListener('click', (e) => { e.currentTarget.blur(); if (mode === 'online') return net.spec ? leaveOnline() : netMenu(); if (state === 'play') pause(); else if (state === 'pause') resume(); });
