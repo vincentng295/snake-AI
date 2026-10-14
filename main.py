@@ -92,6 +92,11 @@ PORT = env_int("PORT", 8888)
 ALLOWED_ORIGINS_RAW = os.getenv("ALLOWED_ORIGINS", "*").strip()
 ALLOW_ALL = ALLOWED_ORIGINS_RAW in ("", "*")
 ALLOWED_LIST = [o.strip().rstrip("/") for o in ALLOWED_ORIGINS_RAW.split(",") if o.strip()]
+# Chỉ chấp nhận request có header Host nằm trong danh sách (cách nhau dấu phẩy, bỏ qua cổng).
+# Hỗ trợ "*.ten-mien.com". Để trống hoặc "*" = chấp nhận mọi Host (như cũ).
+ALLOWED_HOSTS_RAW = os.getenv("ALLOWED_HOSTS", "*").strip()
+ALLOWED_HOSTS = [h.strip().lower() for h in ALLOWED_HOSTS_RAW.split(",") if h.strip()]
+ALLOW_ANY_HOST = not ALLOWED_HOSTS or "*" in ALLOWED_HOSTS
 
 # Tự phục vụ giao diện web (index.html...) để chạy nội bộ. Chỉ các file trong danh sách trắng
 # bên dưới mới được trả ra, nên .env, snake.db, main.py... không bao giờ bị lộ.
@@ -160,6 +165,49 @@ socketio = SocketIO(
     ping_interval=10,
     ping_timeout=30,
 )
+
+
+def _strip_port(h):
+    h = (h or "").strip().lower()
+    if h.startswith("["):  # IPv6: [::1]:8888
+        end = h.find("]")
+        return h[: end + 1] if end != -1 else h
+    return h.rsplit(":", 1)[0] if h.count(":") == 1 else h
+
+
+def host_allowed(host):
+    if ALLOW_ANY_HOST:
+        return True
+    h = _strip_port(host).rstrip(".")
+    if not h:
+        return False
+    for pat in ALLOWED_HOSTS:
+        pat = _strip_port(pat).rstrip(".")
+        if pat == h:
+            return True
+        if pat.startswith("*.") and h.endswith(pat[1:]) and len(h) > len(pat) - 1:
+            return True
+    return False
+
+
+class HostGuard:
+    """Chặn mọi request (cả Socket.IO) có Host không nằm trong ALLOWED_HOSTS."""
+
+    def __init__(self, wsgi):
+        self.wsgi = wsgi
+
+    def __call__(self, environ, start_response):
+        if not host_allowed(environ.get("HTTP_HOST", "")):
+            body = b"Host not allowed"
+            start_response("421 Misdirected Request",
+                           [("Content-Type", "text/plain; charset=utf-8"),
+                            ("Content-Length", str(len(body)))])
+            return [body]
+        return self.wsgi(environ, start_response)
+
+
+if not ALLOW_ANY_HOST:
+    app.wsgi_app = HostGuard(app.wsgi_app)
 
 
 @app.after_request
@@ -1285,6 +1333,7 @@ def start_game_loop():
 if __name__ == "__main__":
     print(f"[*] Bản đồ {W}x{W}, tick {TICK_MS}ms, tối đa {MAX_PLAYERS} người, tim {HEARTS_START}/{HEARTS_MAX}")
     print(f"[*] CORS: {'cho phép mọi nguồn (*)' if ALLOW_ALL else ', '.join(ALLOWED_LIST)}")
+    print(f"[*] Host: {'chấp nhận mọi Host' if ALLOW_ANY_HOST else 'chỉ chấp nhận ' + ', '.join(ALLOWED_HOSTS)}")
     if SERVE_WEB and os.path.isfile(os.path.join(WEB_DIR, "index.html")):
         print(f"[*] Chạy nội bộ: mở http://{'127.0.0.1' if HOST in ('0.0.0.0', '::') else HOST}:{PORT}/")
         if HOST in ("0.0.0.0", "::"):
