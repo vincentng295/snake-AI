@@ -4,3 +4,4 @@ config.yml
 snake.db
 cloudflared
 cloudflared.exe
+/.certs

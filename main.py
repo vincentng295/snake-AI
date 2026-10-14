@@ -1215,6 +1215,61 @@ def shutdown_save():
         pass
 
 
+# ---- HTTPS trực tiếp (cert Let's Encrypt) ----
+HTTPS_CERT = os.getenv("HTTPS_CERT", "").strip()
+HTTPS_KEY = os.getenv("HTTPS_KEY", "").strip()
+CERT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".certs")
+HTTPS_NAMES = []
+
+
+def _resolve_pem(spec, name):
+    kind, _, val = spec.partition(";")
+    kind, val = kind.strip().lower(), val.strip()
+    if kind == "file":
+        return val
+    if kind == "url":
+        os.makedirs(CERT_DIR, exist_ok=True)
+        dest = os.path.join(CERT_DIR, name)
+        req = urllib.request.Request(val, headers={"User-Agent": "snake-ai"})
+        with urllib.request.urlopen(req, timeout=20) as r, open(dest, "wb") as f:
+            f.write(r.read())
+        return dest
+    raise ValueError(f"định dạng không hợp lệ: {spec!r}")
+
+
+def cert_names(path):
+    """Các tên miền (SAN) ghi trong cert, để hiển thị cho người dùng. Lỗi thì trả về []."""
+    try:
+        import ssl
+        info = ssl._ssl._test_decode_cert(path)
+        return [v for k, v in info.get("subjectAltName", ()) if k == "DNS"]
+    except Exception:
+        return []
+
+
+def build_ssl_context():
+    if not HTTPS_CERT or HTTPS_CERT.lower() == "none":
+        return None
+    key_spec = HTTPS_KEY
+    if not key_spec and HTTPS_CERT.endswith("fullchain.pem"):
+        key_spec = HTTPS_CERT[: -len("fullchain.pem")] + "privkey.pem"
+    if not key_spec:
+        print("[!] Có HTTPS_CERT nhưng thiếu HTTPS_KEY - chạy http.")
+        return None
+    try:
+        import ssl
+        cert = _resolve_pem(HTTPS_CERT, "fullchain.pem")
+        key = _resolve_pem(key_spec, "privkey.pem")
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        ctx.load_cert_chain(cert, key)
+        global HTTPS_NAMES
+        HTTPS_NAMES = cert_names(cert)
+        return ctx
+    except Exception as e:
+        print(f"[!] Không nạp được cert ({e}) - chạy http.")
+        return None
+
+
 init_db()
 load_questions(force=True)
 _loop_started = False
@@ -1247,9 +1302,17 @@ if __name__ == "__main__":
     else:
         print("[*] TUNNEL=false - không chạy cloudflared, chỉ phục vụ nội bộ.")
 
+    ssl_ctx = build_ssl_context()
+    run_kwargs = {}
+    if ssl_ctx:
+        run_kwargs["ssl_context"] = ssl_ctx
+        names = ", ".join(HTTPS_NAMES) if HTTPS_NAMES else "(không đọc được tên miền từ cert)"
+        print(f"[*] HTTPS bật, cổng {PORT}. Cert hợp lệ cho: {names}")
+        print("[*] Phải truy cập bằng đúng một trong các tên miền trên (không phải IP).")
+
     try:
         socketio.run(app, host=HOST, port=PORT, debug=False, allow_unsafe_werkzeug=True,
-                     request_handler=NoDelayHandler)
+                     request_handler=NoDelayHandler, **run_kwargs)
     except KeyboardInterrupt:
         print("\n[*] Nhận Ctrl+C - đang thoát chương trình...")
         stop_tunnel()
