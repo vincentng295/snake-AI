@@ -1,6 +1,6 @@
 // Service worker: giúp game chạy offline.
 // Khi sửa index.html / question.json, hãy tăng số phiên bản CACHE để máy cập nhật bản mới.
-const CACHE = 'snake-ai-v8';
+const CACHE = 'snake-ai-v9';
 const ASSETS = [
   './',
   './index.html',

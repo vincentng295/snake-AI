@@ -2184,9 +2184,42 @@ function drawTile(ch, x, y, c, alt) {   // (x, y) = góc trên trái của ô
   }
 }
 
+/* ---- dự đoán phía client: rắn của mình chạy ngay theo phím, server chỉ xác nhận ---- */
+function tileSolid(x, y) { const c = tileAt(x, y); return c === 'W' || c === 'T' || c === 'H' || c === 'D'; }
+function onSnk(d) {   // server đặt lại rắn của mình (vào phòng, hồi sinh, đồng bộ lại)
+  if (net.me && d.ep <= net.me.ep) return;
+  const cells = []; for (let i = 0; i < d.c.length; i += 2) cells.push({ x: d.c[i], y: d.c[i + 1] });
+  net.me = { cells, from: cells.map((c) => ({ x: c.x, y: c.y })), dir: { x: d.d[0], y: d.d[1] }, queue: [], grow: 0, ep: d.ep, t0: 0, frozen: 0 };
+}
+function meStep(ts) {
+  const m = net.me; if (!m || state !== 'play' || !net.joined || net.spec) return;
+  const tick = net.tick, W = net.W;
+  if (!m.t0 || ts - m.t0 > tick * 4) m.t0 = ts;
+  if (m.frozen) {   // đụng vật cản: chờ server cho hồi sinh (quá 1 giây thì xin đồng bộ lại)
+    if (ts - m.frozen > 1000) { m.frozen = ts; if (net.sock) net.sock.emit('sync'); }
+    m.t0 = ts; return;
+  }
+  while (ts - m.t0 >= tick) {
+    m.t0 += tick;
+    if (m.queue.length) m.dir = m.queue.shift();
+    const h = m.cells[0], nx = (h.x + m.dir.x + W) % W, ny = (h.y + m.dir.y + W) % W;
+    if (net.sock) net.sock.emit('mv', { x: nx, y: ny, ep: m.ep });
+    if (tileSolid(nx, ny)) { m.frozen = ts; return; }
+    const old = m.cells.map((c) => ({ x: c.x, y: c.y }));
+    m.cells.unshift({ x: nx, y: ny });
+    if (m.grow > 0) m.grow--; else m.cells.pop();
+    m.from = m.cells.map((c, i) => old[i] || c);
+  }
+}
+function meOut(ts) {
+  const m = net.me, W = net.W, prog = m.frozen ? 1 : Math.min(1, Math.max(0, (ts - m.t0) / net.tick));
+  const pts = m.cells.map((c, i) => { const f = m.from[i] || c; return [f.x + wrapD(c.x - f.x, W) * prog, f.y + wrapD(c.y - f.y, W) * prog]; });
+  return { pts, d: [0, 0, 0, 0, m.dir.x, m.dir.y] };
+}
+
 /* ---- vẽ ---- */
 function drawOnline(ts) {
-  frameStats(ts);
+  frameStats(ts); meStep(ts);
   const fr = advanceClock(ts), c = CELL, V = VC, W = net.W, size = c * V;
   ctx.clearRect(0, 0, size, size);
   if (!fr) return;
@@ -2194,6 +2227,7 @@ function drawOnline(ts) {
   const mA = A ? snapMap(A) : null;
   if (B) for (const pb of B.s) list.push({ p: pb, o: sampleSnake(mA ? mA.get(pb[0]) : null, pb, fr.rk, A, B) });
   else for (const pa of A.s) list.push({ p: pa, o: sampleSnake(pa, null, fr.rk, A, null) });
+  if (net.me && !net.spec) { const mine = list.find((o) => o.p[0] === net.id); if (mine) mine.o = meOut(ts); }
   const camId = net.spec ? pickFollow(list) : net.id;
   net.camId = camId;
   const me = list.find((o) => o.p[0] === camId);
@@ -2307,7 +2341,7 @@ const EXIT_SVG = '<svg viewBox="0 0 24 24"><path class="ln" d="M6 6l12 12M18 6L6
 function netStop() {
   stopAck(); setNetBar('');
   if (net.sock) { net.sock.removeAllListeners(); net.sock.disconnect(); net.sock = null; }
-  Object.assign(net, { map: null, joined: false, everJoined: false, spec: false, follow: null, specTxt: '', roster: [], q2: [], offs: [], gaps: [], rk: null, rtt: 0, tv: '' });
+  Object.assign(net, { me: null, map: null, joined: false, everJoined: false, spec: false, follow: null, specTxt: '', roster: [], q2: [], offs: [], gaps: [], rk: null, rtt: 0, tv: '' });
   mode = 'offline'; $('app').classList.remove('net', 'spec');
   $('btnPause').innerHTML = PAUSE_SVG; $('btnPause').setAttribute('aria-label', 'Tạm dừng');
   VC = COLS; VR = ROWS; maxHearts = CONFIG.HEARTS_MAX; hearts = CONFIG.HEARTS; score = 0; best = store.get(K.best, 0);
@@ -2343,6 +2377,7 @@ function openSocket(onConnect, onFail) {
     });
     s.on('feed', (d) => { net.feed.push({ m: d.m, k: d.k, t: Date.now() }); });
     s.on('ev', onEv);
+    s.on('snk', onSnk);
     s.on('afk', () => { state = 'pause'; showOverlay(menuHtml()); });
     s.on('kicked', (d) => { restoreOffline(); showStart((d && d.reason) || 'Bạn đã bị ngắt kết nối', 'bad'); });
   }).catch(() => { onFail(); });
@@ -2360,7 +2395,7 @@ function doJoin() {
   if (!tok) { tok = Math.random().toString(36).slice(2) + Date.now().toString(36); store.set(K.token, tok); }
   net.sock.emit('join', { name: net.name, token: tok }, (r) => {
     if (!r || !r.ok) { const msg = (r && r.error) || 'Không vào được phòng'; restoreOffline(); showNameCard(msg); return; }
-    resetPlayback(r); net.id = r.id; net.spec = false;
+    resetPlayback(r); net.id = r.id; net.spec = false; net.GROW = r.grow || 2; net.maxLen = r.maxLen || 40;
     mode = 'online'; $('app').classList.add('net'); $('app').classList.remove('spec');
     maxHearts = r.heartsMax; hearts = r.hearts; score = r.score; best = r.best;
     VC = VR = Math.min(CONFIG.VIEW, 2 * (net.ir - 4) + 1); fit(); updateHud();
@@ -2401,19 +2436,20 @@ function specToggle() { net.overview = !net.overview; paintSpecMode(); }
 function specJoin() { restoreOffline(); showNameCard(); }
 
 function onEv(e) {
-  if (e.t === 'ok') { toast('Đúng rồi! +' + e.gain + (e.streak > 1 ? '  (liên tiếp ' + e.streak + ')' : ''), 'ok'); sfx('ok'); vib(20); }
+  if (e.t === 'ok') { if (net.me) net.me.grow = Math.min(net.me.grow + (net.GROW || 2), Math.max(0, (net.maxLen || 40) - net.me.cells.length)); toast('Đúng rồi! +' + e.gain + (e.streak > 1 ? '  (liên tiếp ' + e.streak + ')' : ''), 'ok'); sfx('ok'); vib(20); }
   else if (e.t === 'wrong') { toast('Ăn nhầm đáp án ' + e.letter + '! -1 tim', 'bad'); shake(); sfx('bad'); vib(120); }
   else if (e.t === 'bite') { toast('Cắn trúng ' + e.who + ': -' + e.pts + ' điểm, -1 tim', 'bad'); shake(); sfx('hurt'); vib(120); }
   else if (e.t === 'self') { toast('Cắn trúng đuôi! -1 tim', 'bad'); shake(); sfx('hurt'); vib(120); }
   else if (e.t === 'wall') { toast('Đụng ' + ({ W: 'tường', T: 'cây', H: 'nhà', D: 'nhà' }[e.what] || 'vật cản') + '! -1 tim', 'bad'); shake(); sfx('hurt'); vib(120); }
   else if (e.t === 'heart') { toast('+1 tim', 'ok'); sfx('ok'); }
   else if (e.t === 'heartfull') { toast('Tim đã đầy: +' + e.pts + ' điểm', 'ok'); sfx('ok'); }
-  else if (e.t === 'dead') { state = 'over'; score = e.score; best = Math.max(best, e.best || 0); updateHud(); sfx('over'); showOverlay(deadHtml()); }
+  else if (e.t === 'dead') { net.me = null; state = 'over'; score = e.score; best = Math.max(best, e.best || 0); updateHud(); sfx('over'); showOverlay(deadHtml()); }
 }
-function netDir(dx, dy) {   // gửi kèm ô đầu rắn đang thấy trên màn hình để server bù độ trễ
-  if (!net.sock || !net.joined || net.spec) return;
-  const W = net.W, c = net.cam;
-  net.sock.emit('dir', { x: dx, y: dy, hx: ((Math.round(c[0]) % W) + W) % W, hy: ((Math.round(c[1]) % W) + W) % W });
+function netDir(dx, dy) {   // đổi hướng ngay trên máy, không chờ server
+  const m = net.me; if (!m || net.spec || !net.joined) return;
+  const last = m.queue.length ? m.queue[m.queue.length - 1] : m.dir;
+  if ((dx === -last.x && dy === -last.y) || (dx === last.x && dy === last.y)) return;
+  if (m.queue.length < 3) m.queue.push({ x: dx, y: dy });
 }
 function netMenu() {
   if (state !== 'play' || !net.sock || !net.joined || net.spec) return;

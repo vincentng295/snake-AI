@@ -483,7 +483,7 @@ R = {"id": 0, "st": "between", "ends": 0.0, "between_until": 0.0, "q": None, "it
 class Player:
     __slots__ = ("id", "sid", "name", "key", "token", "color", "snake", "dir", "queue", "grow", "hearts",
                  "score", "streak", "alive", "dead", "connected", "expire", "protect_until", "last_input",
-                 "acked", "ack_seen", "last_sent", "cam")
+                 "acked", "ack_seen", "last_sent", "cam", "ep", "pend", "trail")
 
     def __init__(self, pid, sid, name, key, token, color):
         self.id = pid
@@ -508,6 +508,9 @@ class Player:
         self.acked = 0          # tick mới nhất mà client báo đã nhận
         self.ack_seen = False   # client cũ không gửi ack thì không điều tiết
         self.last_sent = 0
+        self.ep = 0             # đời rắn: lệnh đi của đời cũ bị bỏ qua
+        self.pend = []          # các ô đầu rắn client báo, chờ server xử lý
+        self.trail = []         # các ô đầu rắn đi qua trong tick này
         self.cam = None         # vị trí đầu rắn gần nhất, dùng để cắt vùng gửi
 
 
@@ -578,6 +581,11 @@ def note_score(p):
         S.best_dirty = True
 
 
+def send_snake(p):
+    """Báo cho client vị trí rắn do server quyết định (hồi sinh / ép đồng bộ lại)."""
+    emit_to(p, "snk", {"c": [v for c in p.snake for v in c], "d": [p.dir[0], p.dir[1]], "ep": p.ep})
+
+
 # ---------- sinh rắn / ô đáp án / tim ----------
 def spawn_snake(p, now):
     heads = [q.snake[0] for q in players.values() if q.alive and q.snake and q.id != p.id]
@@ -608,6 +616,10 @@ def spawn_snake(p, now):
     p.grow = 0
     p.alive = True
     p.protect_until = now + SPAWN_PROTECT
+    p.ep += 1
+    p.pend = []
+    p.trail = []
+    send_snake(p)
 
 
 def place_cells(n):
@@ -774,15 +786,31 @@ def game_tick(now, idle=False):
     alive = [p for p in players.values() if p.alive and p.snake]
 
     # 1) tất cả rắn tiến một bước
+    # Rắn do CLIENT tự chạy ngay theo phím (không phụ thuộc ping) và báo từng ô đầu rắn lên.
+    # Server kiểm tra ô đó có kề đầu rắn không rồi mới nhận; chạy chậm thì chờ, chạy dồn thì bắt kịp.
     for p in alive:
-        if p.queue:
-            p.dir = p.queue.pop(0)
-        hx, hy = p.snake[0]
-        p.snake.insert(0, ((hx + p.dir[0]) % W, (hy + p.dir[1]) % W))
-        if p.grow > 0:
-            p.grow -= 1
-        else:
-            p.snake.pop()
+        p.trail = []
+        for _ in range(1 + (len(p.pend) > 3) + (len(p.pend) > 7)):
+            if not p.pend:
+                break
+            nx, ny = p.pend.pop(0)
+            hx, hy = p.snake[0]
+            dx, dy = (nx - hx) % W, (ny - hy) % W
+            dx, dy = (dx if dx <= 1 else dx - W), (dy if dy <= 1 else dy - W)
+            if abs(dx) + abs(dy) != 1 or (len(p.snake) > 1 and (nx, ny) == p.snake[1]):
+                p.ep += 1          # đi sai luật: ép client đồng bộ lại theo server
+                p.pend = []
+                send_snake(p)
+                break
+            if (dx, dy) != p.dir:
+                p.last_input = now
+            p.dir = (dx, dy)
+            p.snake.insert(0, (nx, ny))
+            if p.grow > 0:
+                p.grow -= 1
+            else:
+                p.snake.pop()
+            p.trail.append((nx, ny))
 
     # 1b) đầu rắn chui vào tường / cây / nhà
     wall_hit = {}
@@ -819,10 +847,10 @@ def game_tick(now, idle=False):
     eaters = [p for p in alive if p.alive and p.id not in hits]
     random.shuffle(eaters)
     for p in eaters:
-        head = p.snake[0]
+        cells = p.trail
         if R["st"] == "active":
             for it in list(R["items"]):
-                if (it["x"], it["y"]) != head:
+                if (it["x"], it["y"]) not in cells:
                     continue
                 if it["ok"]:
                     p.streak += 1
@@ -845,7 +873,7 @@ def game_tick(now, idle=False):
         if not p.alive:
             continue
         for h in list(S.hearts):
-            if (h["x"], h["y"]) == head:
+            if (h["x"], h["y"]) in cells:
                 S.hearts.remove(h)
                 if p.hearts < HEARTS_MAX:
                     p.hearts += 1
@@ -977,7 +1005,7 @@ def join_ack(p):
     return {
         "ok": True, "id": p.id, "name": p.name, "W": W, "tick": TICK_MS, "heartsMax": HEARTS_MAX,
         "hearts": p.hearts, "score": p.score, "dead": p.dead,
-        "best": best_all.get(p.key, [p.name, 0])[1], "ir": INTEREST_R, "map": MAP_ROWS,
+        "best": best_all.get(p.key, [p.name, 0])[1], "ir": INTEREST_R, "map": MAP_ROWS, "grow": GROW, "maxLen": MAX_LEN,
     }
 
 
@@ -1101,6 +1129,30 @@ def on_dir(data):
             return
         if len(p.queue) < 2:
             p.queue.append((dx, dy))
+
+
+@socketio.on("mv")
+def on_mv(data):
+    if not isinstance(data, dict):
+        return
+    try:
+        x, y, ep = int(data.get("x")), int(data.get("y")), int(data.get("ep"))
+    except (TypeError, ValueError):
+        return
+    with G:
+        p = _player_of(request.sid)
+        if p and p.alive and ep == p.ep and len(p.pend) < 16:
+            p.pend.append((x % W, y % W))
+
+
+@socketio.on("sync")
+def on_sync(_data=None):
+    with G:
+        p = _player_of(request.sid)
+        if p and p.alive:
+            p.ep += 1
+            p.pend = []
+            send_snake(p)
 
 
 @socketio.on("away")
