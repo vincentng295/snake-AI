@@ -1,6 +1,6 @@
 // Service worker: giúp game chạy offline.
 // Khi sửa index.html / question.json, hãy tăng số phiên bản CACHE để máy cập nhật bản mới.
-const CACHE = 'snake-ai-v7';
+const CACHE = 'snake-ai-v8';
 const ASSETS = [
   './',
   './index.html',
@@ -8,7 +8,8 @@ const ASSETS = [
   './socket_io_min.js',
   './manifest.webmanifest',
   './icon-192.png',
-  './icon-512.png'
+  './icon-512.png',
+  './map_preview.png'
 ];
 
 const ASSET_PATHS = new Set(ASSETS.map((a) => new URL(a, self.location).pathname));
