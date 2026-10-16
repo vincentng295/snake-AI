@@ -2410,7 +2410,11 @@ function onEv(e) {
   else if (e.t === 'heartfull') { toast('Tim đã đầy: +' + e.pts + ' điểm', 'ok'); sfx('ok'); }
   else if (e.t === 'dead') { state = 'over'; score = e.score; best = Math.max(best, e.best || 0); updateHud(); sfx('over'); showOverlay(deadHtml()); }
 }
-function netDir(dx, dy) { if (net.sock && net.joined && !net.spec) net.sock.emit('dir', { x: dx, y: dy }); }
+function netDir(dx, dy) {   // gửi kèm ô đầu rắn đang thấy trên màn hình để server bù độ trễ
+  if (!net.sock || !net.joined || net.spec) return;
+  const W = net.W, c = net.cam;
+  net.sock.emit('dir', { x: dx, y: dy, hx: ((Math.round(c[0]) % W) + W) % W, hy: ((Math.round(c[1]) % W) + W) % W });
+}
 function netMenu() {
   if (state !== 'play' || !net.sock || !net.joined || net.spec) return;
   net.sock.emit('away'); state = 'pause'; showOverlay(menuHtml());

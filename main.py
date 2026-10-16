@@ -1040,6 +1040,41 @@ def _player_of(sid):
     return players.get(pid) if pid is not None else None
 
 
+REWIND_MAX = env_int("REWIND_MAX", 6)   # bù trễ mạng: cho phép "rẽ lùi" tối đa bấy nhiêu bước
+
+
+def try_rewind(p, d, hx, hy):
+    """Client báo đã bấm rẽ khi thấy đầu rắn ở ô (hx, hy), nhưng lệnh tới muộn nên đầu thật đã đi tiếp vài bước.
+    Nếu ô đó vẫn nằm trong vài đốt đầu của thân (thân chính là lịch sử đường đi), viết lại đoạn đường để rắn
+    rẽ đúng tại ô đó, miễn là đường mới còn trống. Không hợp lệ thì trả False và xử lý như bình thường."""
+    s = p.snake
+    idx = next((i for i in range(min(REWIND_MAX, len(s) - 2) + 1) if s[i] == (hx, hy)), 0)
+    if idx == 0:
+        return False
+
+    def step(a, b):
+        dx, dy = (a[0] - b[0]) % W, (a[1] - b[1]) % W
+        return (dx if dx <= 1 else dx - W, dy if dy <= 1 else dy - W)
+
+    v = step(s[idx], s[idx + 1])
+    if abs(v[0]) + abs(v[1]) != 1 or d == v or d == (-v[0], -v[1]):
+        return False
+    if any(step(s[j], s[j + 1]) != v for j in range(idx)):   # giữa chừng đã rẽ rồi
+        return False
+    new = [((hx + d[0] * j) % W, (hy + d[1] * j) % W) for j in range(idx, 0, -1)]
+    block = set(BLOCKED) | set(s[idx:])
+    block |= {(i["x"], i["y"]) for i in R["items"]} | {(h["x"], h["y"]) for h in S.hearts}
+    for q in players.values():
+        if q.alive and q is not p:
+            block.update(q.snake)
+    if any(c in block for c in new):
+        return False
+    p.snake = new + s[idx:]
+    p.dir = d
+    p.queue = []
+    return True
+
+
 @socketio.on("dir")
 def on_dir(data):
     if not isinstance(data, dict):
@@ -1050,11 +1085,17 @@ def on_dir(data):
         return
     if abs(dx) + abs(dy) != 1:
         return
+    try:
+        hx, hy = int(data.get("hx")), int(data.get("hy"))
+    except (TypeError, ValueError):
+        hx = hy = None
     with G:
         p = _player_of(request.sid)
         if not p or not p.alive:
             return
         p.last_input = now_ts()
+        if hx is not None and p.snake and try_rewind(p, (dx, dy), hx, hy):
+            return
         last = p.queue[-1] if p.queue else p.dir
         if (dx, dy) == last or (dx, dy) == (-last[0], -last[1]):
             return
