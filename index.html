@@ -2249,8 +2249,8 @@ function drawOnline(ts) {
   }
   const m = c * 0.75, clampP = (q) => [Math.min(size - m, Math.max(m, q[0])), Math.min(size - m, Math.max(m, q[1]))];
   const inView = (q) => q[0] >= 0 && q[1] >= 0 && q[0] <= size && q[1] <= size;
-  for (const hh of base.hr) { const q = P(hh[0], hh[1]); if (inView(q)) drawHeart(q[0], q[1], ts, hh[2]); else { const e = clampP(q); drawHeart(e[0], e[1], ts, hh[2], 0.7); } }
-  for (const it of base.it) { const q = P(it[1], it[2]); if (inView(q)) drawItem(q[0], q[1], it[0], ts); else { const e = clampP(q); drawItem(e[0], e[1], it[0], ts, 0.7); } }
+  for (const hh of base.hr) { const o = ((net.HS || 1) - 1) / 2, q = P(hh[0] + o, hh[1] + o); if (inView(q)) drawHeart(q[0], q[1], ts, hh[2], net.HS || 1); else { const e = clampP(q); drawHeart(e[0], e[1], ts, hh[2], 0.7); } }
+  for (const it of base.it) { const o = ((net.IS || 1) - 1) / 2, q = P(it[1] + o, it[2] + o); if (inView(q)) drawItem(q[0], q[1], it[0], ts, net.IS || 1); else { const e = clampP(q); drawItem(e[0], e[1], it[0], ts, 0.7); } }
   list.sort((a, b) => (a.p[0] === camId) - (b.p[0] === camId));
   const fs = Math.max(ov ? 9 : 11, Math.round(c * (ov ? 0.8 : 0.5)));
   for (const o of list) {
@@ -2354,7 +2354,7 @@ function leaveOnline() {
   if (net.sock && net.joined) { net.sock.emit(net.spec ? 'unspectate' : 'leave', null, fin); setTimeout(fin, 700); } else fin();
 }
 function resetPlayback(r) {
-  Object.assign(net, { map: (r.map && r.map.length) ? r.map : null, W: r.W, tick: r.tick, ir: r.ir || 14, joined: true, everJoined: true, q2: [], offs: [], gaps: [], base: 0,
+  Object.assign(net, { IS: r.is || 1, HS: r.hs || 1, map: (r.map && r.map.length) ? r.map : null, W: r.W, tick: r.tick, ir: r.ir || 14, joined: true, everJoined: true, q2: [], offs: [], gaps: [], base: 0,
     D: r.tick * 2, bump: 0, rk: null, lastDraw: 0, lastRecv: 0, lastK: 0, lastUnder: 0, feed: [], tv: '' });
   setNetBar(''); startAck();
 }

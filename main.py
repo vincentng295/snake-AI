@@ -562,15 +562,24 @@ def tdist(a, b):
     return min(dx, W - dx) + min(dy, W - dy)
 
 
+ITEM_SIZE = max(1, min(6, env_int("ITEM_SIZE", 1)))    # ô đáp án rộng ITEM_SIZE x ITEM_SIZE ô (mặc định 1x1)
+HEART_SIZE = max(1, min(4, env_int("HEART_SIZE", 1)))  # trái tim rộng HEART_SIZE x HEART_SIZE ô (mặc định 1x1)
+
+
+def block(x, y, n):
+    """Các ô mà vật cỡ n x n, góc trên trái ở (x, y), chiếm."""
+    return {((x + i) % W, (y + j) % W) for i in range(n) for j in range(n)}
+
+
 def occupied():
     s = set(BLOCKED)
     for p in players.values():
         if p.alive:
             s.update(p.snake)
     for it in R["items"]:
-        s.add((it["x"], it["y"]))
+        s.update(block(it["x"], it["y"], ITEM_SIZE))
     for h in S.hearts:
-        s.add((h["x"], h["y"]))
+        s.update(block(h["x"], h["y"], HEART_SIZE))
     return s
 
 
@@ -630,7 +639,7 @@ def place_cells(n):
         found = None
         for _try in range(300):
             c = (random.randrange(W), random.randrange(W))
-            if c in occ or any(tdist(c, q) < ITEM_SPACING for q in placed):
+            if not block(c[0], c[1], ITEM_SIZE).isdisjoint(occ) or any(tdist(c, q) < max(ITEM_SPACING, ITEM_SIZE + 1) for q in placed):
                 continue
             if any(tdist(c, h) < 4 for h in heads):
                 continue
@@ -639,13 +648,13 @@ def place_cells(n):
         if found is None:
             for _try in range(500):
                 c = (random.randrange(W), random.randrange(W))
-                if c not in occ and c not in placed:
+                if block(c[0], c[1], ITEM_SIZE).isdisjoint(occ):
                     found = c
                     break
         if found is None:
             found = (random.randrange(W), random.randrange(W))
         placed.append(found)
-        occ.add(found)
+        occ.update(block(found[0], found[1], ITEM_SIZE))
     return placed
 
 
@@ -706,7 +715,7 @@ def maintain_hearts(now):
     occ = occupied()
     for _ in range(200):
         c = (random.randrange(W), random.randrange(W))
-        if c not in occ:
+        if block(c[0], c[1], HEART_SIZE).isdisjoint(occ):
             S.hearts.append({"x": c[0], "y": c[1], "until": now + HEART_LIFETIME})
             return
 
@@ -850,7 +859,7 @@ def game_tick(now, idle=False):
         cells = p.trail
         if R["st"] == "active":
             for it in list(R["items"]):
-                if (it["x"], it["y"]) not in cells:
+                if block(it["x"], it["y"], ITEM_SIZE).isdisjoint(cells):
                     continue
                 if it["ok"]:
                     p.streak += 1
@@ -873,7 +882,7 @@ def game_tick(now, idle=False):
         if not p.alive:
             continue
         for h in list(S.hearts):
-            if (h["x"], h["y"]) in cells:
+            if not block(h["x"], h["y"], HEART_SIZE).isdisjoint(cells):
                 S.hearts.remove(h)
                 if p.hearts < HEARTS_MAX:
                     p.hearts += 1
@@ -1005,7 +1014,7 @@ def join_ack(p):
     return {
         "ok": True, "id": p.id, "name": p.name, "W": W, "tick": TICK_MS, "heartsMax": HEARTS_MAX,
         "hearts": p.hearts, "score": p.score, "dead": p.dead,
-        "best": best_all.get(p.key, [p.name, 0])[1], "ir": INTEREST_R, "map": MAP_ROWS, "grow": GROW, "maxLen": MAX_LEN,
+        "best": best_all.get(p.key, [p.name, 0])[1], "ir": INTEREST_R, "map": MAP_ROWS, "grow": GROW, "maxLen": MAX_LEN, "is": ITEM_SIZE, "hs": HEART_SIZE,
     }
 
 
@@ -1208,7 +1217,7 @@ def on_spectate(_data=None):
                 le = dict(R["last_end"])
                 le["left"] = round(max(0.0, R["between_until"] - now), 1)
                 socketio.emit("round_end", le, to=sid)
-        return {"ok": True, "spec": True, "W": W, "tick": TICK_MS, "heartsMax": HEARTS_MAX, "ir": INTEREST_R, "map": MAP_ROWS}
+        return {"ok": True, "spec": True, "W": W, "tick": TICK_MS, "heartsMax": HEARTS_MAX, "ir": INTEREST_R, "map": MAP_ROWS, "is": ITEM_SIZE, "hs": HEART_SIZE}
 
 
 @socketio.on("unspectate")
