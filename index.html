@@ -1935,7 +1935,7 @@ if (fsReq) {   // iPhone không hỗ trợ: nút ẩn, hãy dùng "Thêm vào M�
 function fit() {
   const r = stage.getBoundingClientRect();
   const avail = Math.min(r.width - 12, r.height - 18);
-  const cell = Math.max(10, Math.floor(avail / VC));
+  const cell = Math.max(VC > 60 ? 3 : 10, Math.floor(avail / VC));
   const css = cell * VC;
   wrap.style.width = css + 'px'; wrap.style.height = css + 'px';
   const dpr = Math.min(window.devicePixelRatio || 1, dprCap);
@@ -2157,6 +2157,33 @@ function frameStats(ts) {
   else if (net.joined && netBarMsg.indexOf('Mạng yếu') === 0) setNetBar('');
 }
 
+/* ---- bản đồ: đất nhà (Y), mái nhà (H), cửa (D), tường (W), cây (T) ---- */
+function tileAt(x, y) {
+  const m = net.map; if (!m) return '.';
+  const W = net.W; return m[((y % W) + W) % W][((x % W) + W) % W];
+}
+function drawTile(ch, x, y, c, alt) {   // (x, y) = góc trên trái của ô
+  const ink = Math.max(1.5, c * 0.07), x0 = x + ink / 2, y0 = y + ink / 2, s = c - ink;
+  ctx.lineWidth = ink; ctx.strokeStyle = INK;
+  if (ch === 'Y') { ctx.fillStyle = alt ? '#f1e0b8' : '#e9d5a8'; ctx.fillRect(x, y, c + 0.6, c + 0.6); }
+  else if (ch === 'W') {
+    rr(x0, y0, s, s, c * 0.12); ctx.fillStyle = '#8f9bb3'; ctx.fill(); ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,.28)'; ctx.fillRect(x0 + s * 0.14, y0 + s * 0.14, s * 0.72, s * 0.16);
+  } else if (ch === 'T') {
+    const cx = x + c / 2, cy = y + c / 2;
+    ctx.fillStyle = '#7a4a2a'; ctx.fillRect(cx - c * 0.07, cy + c * 0.18, c * 0.14, c * 0.26);
+    ctx.beginPath(); ctx.arc(cx, cy - c * 0.04, c * 0.4, 0, Math.PI * 2); ctx.fillStyle = '#2fa866'; ctx.fill(); ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,.3)'; ctx.beginPath(); ctx.arc(cx - c * 0.14, cy - c * 0.16, c * 0.09, 0, Math.PI * 2); ctx.fill();
+  } else if (ch === 'H') {
+    rr(x0, y0, s, s, c * 0.06); ctx.fillStyle = '#ff8a5c'; ctx.fill(); ctx.stroke();
+    ctx.fillStyle = 'rgba(20,48,107,.18)'; ctx.fillRect(x0, y0 + s * 0.46, s, s * 0.08);
+  } else if (ch === 'D') {
+    rr(x0, y0, s, s, c * 0.06); ctx.fillStyle = '#ffe6c7'; ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#8b5a2b'; ctx.fillRect(x + c * 0.3, y + c * 0.3, c * 0.4, c * 0.62); ctx.strokeRect(x + c * 0.3, y + c * 0.3, c * 0.4, c * 0.62);
+    ctx.fillStyle = '#ffd166'; ctx.beginPath(); ctx.arc(x + c * 0.6, y + c * 0.64, c * 0.04, 0, Math.PI * 2); ctx.fill();
+  }
+}
+
 /* ---- vẽ ---- */
 function drawOnline(ts) {
   frameStats(ts);
@@ -2175,7 +2202,7 @@ function drawOnline(ts) {
   let P;
   if (ov) {
     P = (x, y) => [(((x % W) + W) % W + 0.5) * c, (((y % W) + W) % W + 0.5) * c];
-    for (let j = 0; j < W; j++) for (let i = 0; i < W; i++) { ctx.fillStyle = (i + j) & 1 ? '#e3f2ff' : '#f1f9ff'; ctx.fillRect(i * c, j * c, c, c); }
+    for (let j = 0; j < W; j++) for (let i = 0; i < W; i++) { ctx.fillStyle = (i + j) & 1 ? '#e3f2ff' : '#f1f9ff'; ctx.fillRect(i * c, j * c, c, c); const ch = tileAt(i, j); if (ch !== '.') drawTile(ch, i * c, j * c, c, (i + j) & 1); }
   } else {
     P = (x, y) => [(half + 0.5 + wrapD(x - cx, W)) * c, (half + 0.5 + wrapD(y - cy, W)) * c];
     const x0 = Math.floor(cx) - half - 1, y0 = Math.floor(cy) - half - 1;
@@ -2183,6 +2210,7 @@ function drawOnline(ts) {
       const wx = x0 + i, wy = y0 + j, q = P(wx, wy);
       ctx.fillStyle = (wx + wy) & 1 ? '#e3f2ff' : '#f1f9ff';
       ctx.fillRect(q[0] - c / 2, q[1] - c / 2, c + 0.6, c + 0.6);
+      const ch = tileAt(wx, wy); if (ch !== '.') drawTile(ch, q[0] - c / 2, q[1] - c / 2, c, (wx + wy) & 1);
     }
   }
   const m = c * 0.75, clampP = (q) => [Math.min(size - m, Math.max(m, q[0])), Math.min(size - m, Math.max(m, q[1]))];
@@ -2279,7 +2307,7 @@ const EXIT_SVG = '<svg viewBox="0 0 24 24"><path class="ln" d="M6 6l12 12M18 6L6
 function netStop() {
   stopAck(); setNetBar('');
   if (net.sock) { net.sock.removeAllListeners(); net.sock.disconnect(); net.sock = null; }
-  Object.assign(net, { joined: false, everJoined: false, spec: false, follow: null, specTxt: '', roster: [], q2: [], offs: [], gaps: [], rk: null, rtt: 0, tv: '' });
+  Object.assign(net, { map: null, joined: false, everJoined: false, spec: false, follow: null, specTxt: '', roster: [], q2: [], offs: [], gaps: [], rk: null, rtt: 0, tv: '' });
   mode = 'offline'; $('app').classList.remove('net', 'spec');
   $('btnPause').innerHTML = PAUSE_SVG; $('btnPause').setAttribute('aria-label', 'Tạm dừng');
   VC = COLS; VR = ROWS; maxHearts = CONFIG.HEARTS_MAX; hearts = CONFIG.HEARTS; score = 0; best = store.get(K.best, 0);
@@ -2292,7 +2320,7 @@ function leaveOnline() {
   if (net.sock && net.joined) { net.sock.emit(net.spec ? 'unspectate' : 'leave', null, fin); setTimeout(fin, 700); } else fin();
 }
 function resetPlayback(r) {
-  Object.assign(net, { W: r.W, tick: r.tick, ir: r.ir || 14, joined: true, everJoined: true, q2: [], offs: [], gaps: [], base: 0,
+  Object.assign(net, { map: (r.map && r.map.length) ? r.map : null, W: r.W, tick: r.tick, ir: r.ir || 14, joined: true, everJoined: true, q2: [], offs: [], gaps: [], base: 0,
     D: r.tick * 2, bump: 0, rk: null, lastDraw: 0, lastRecv: 0, lastK: 0, lastUnder: 0, feed: [], tv: '' });
   setNetBar(''); startAck();
 }
@@ -2377,6 +2405,7 @@ function onEv(e) {
   else if (e.t === 'wrong') { toast('Ăn nhầm đáp án ' + e.letter + '! -1 tim', 'bad'); shake(); sfx('bad'); vib(120); }
   else if (e.t === 'bite') { toast('Cắn trúng ' + e.who + ': -' + e.pts + ' điểm, -1 tim', 'bad'); shake(); sfx('hurt'); vib(120); }
   else if (e.t === 'self') { toast('Cắn trúng đuôi! -1 tim', 'bad'); shake(); sfx('hurt'); vib(120); }
+  else if (e.t === 'wall') { toast('Đụng ' + ({ W: 'tường', T: 'cây', H: 'nhà', D: 'nhà' }[e.what] || 'vật cản') + '! -1 tim', 'bad'); shake(); sfx('hurt'); vib(120); }
   else if (e.t === 'heart') { toast('+1 tim', 'ok'); sfx('ok'); }
   else if (e.t === 'heartfull') { toast('Tim đã đầy: +' + e.pts + ' điểm', 'ok'); sfx('ok'); }
   else if (e.t === 'dead') { state = 'over'; score = e.score; best = Math.max(best, e.best || 0); updateHud(); sfx('over'); showOverlay(deadHtml()); }

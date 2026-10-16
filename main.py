@@ -124,7 +124,7 @@ _cloudflared_url = None
 # =========================================
 # Cấu hình game (có thể chỉnh trong .env)
 # =========================================
-GAME_SIZE = env_int("GAME_SIZE", 40)            # bản đồ GAME_SIZE x GAME_SIZE, đi xuyên tường
+GAME_SIZE = env_int("GAME_SIZE", 100)            # bản đồ GAME_SIZE x GAME_SIZE, đi xuyên tường
 TICK_MS = env_int("TICK_MS", 150)               # mỗi bước đi (ms), mọi người cùng tốc độ
 MAX_PLAYERS = env_int("MAX_PLAYERS", 24)
 HEARTS_START = env_int("HEARTS_START", 5)
@@ -154,6 +154,125 @@ TICK = TICK_MS / 1000.0
 ROOM = "arena"
 DIRS = [(1, 0), (-1, 0), (0, 1), (0, -1)]
 NUM_COLORS = 8
+
+# ---------- Bản đồ: đất nhà, nhà, tường, cây ----------
+
+def build_map(size, seed):
+    """Bản đồ cố định theo seed. Ký tự: '.' cỏ, 'Y' đất nhà, 'H' mái nhà, 'D' cửa nhà, 'W' tường, 'T' cây."""
+    rnd = random.Random(seed)
+    g = [["."] * size for _ in range(size)]
+
+    def get(x, y):
+        return g[y % size][x % size]
+
+    def put(x, y, ch):
+        g[y % size][x % size] = ch
+
+    def box(x, y, w, h, ch):
+        for yy in range(y, y + h):
+            for xx in range(x, x + w):
+                put(xx, yy, ch)
+
+    # 1) thửa đất nhà: lưới 3x3, bỏ ô giữa làm quảng trường
+    for gy in range(3):
+        for gx in range(3):
+            if gx == 1 and gy == 1:
+                continue
+            pw, ph = rnd.randint(14, 17), rnd.randint(12, 15)
+            px = 8 + gx * 34 + rnd.randint(-2, 2)
+            py = 8 + gy * 34 + rnd.randint(-2, 2)
+            box(px, py, pw, ph, "Y")
+            hw, hh = rnd.randint(5, 7), rnd.randint(4, 5)
+            hx = px + rnd.randint(2, pw - hw - 2)
+            hy = py + rnd.randint(2, ph - hh - 2)
+            box(hx, hy, hw, hh, "H")
+            put(hx + hw // 2, hy + hh - 1, "D")
+            for _ in range(rnd.randint(3, 5)):  # cây trong vườn
+                tx, ty = rnd.randint(px + 1, px + pw - 2), rnd.randint(py + 1, py + ph - 2)
+                if all(get(tx + a, ty + b) == "Y" for a in (-1, 0, 1) for b in (-1, 0, 1)):
+                    put(tx, ty, "T")
+
+    # 2) quảng trường giữa bản đồ: vòng tường có 4 cổng
+    c0 = size // 2
+    box(c0 - 7, c0 - 7, 15, 15, "Y")
+    for k in range(-6, 7):
+        if abs(k) > 1:
+            for x, y in ((c0 + k, c0 - 6), (c0 + k, c0 + 6), (c0 - 6, c0 + k), (c0 + 6, c0 + k)):
+                put(x, y, "W")
+    for a in (-3, 3):
+        for b in (-3, 3):
+            put(c0 + a, c0 + b, "T")
+
+    # 3) vài bức tường lẻ ngoài đường (mỗi bức chừa một khe 3 ô)
+    made = tries = 0
+    while made < 12 and tries < 600:
+        tries += 1
+        n = rnd.randint(9, 18)
+        horiz = rnd.random() < 0.5
+        x, y = rnd.randrange(size), rnd.randrange(size)
+        gap = rnd.randint(3, n - 5)
+        full = [((x + i, y) if horiz else (x, y + i)) for i in range(n)]
+        if all(get(a + dx, b + dy) == "." for a, b in full for dx in (-1, 0, 1) for dy in (-1, 0, 1)):
+            for i, (a, b) in enumerate(full):
+                if not gap <= i < gap + 3:
+                    put(a, b, "W")
+            made += 1
+
+    # 4) cây: vài khu rừng nhỏ + cây lẻ
+    for _ in range(7):
+        cx, cy, r = rnd.randrange(size), rnd.randrange(size), rnd.randint(4, 7)
+        for yy in range(cy - r, cy + r + 1):
+            for xx in range(cx - r, cx + r + 1):
+                if (xx - cx) ** 2 + (yy - cy) ** 2 <= r * r and rnd.random() < 0.55 and get(xx, yy) == ".":
+                    put(xx, yy, "T")
+    for _ in range(110):
+        x, y = rnd.randrange(size), rnd.randrange(size)
+        if get(x, y) == ".":
+            put(x, y, "T")
+
+    # 5) dọn bản đồ: lấp ngõ cụt (rắn không quay đầu được) và các ô bị cô lập
+    def free(ch):
+        return ch in ".Y"
+
+    N4 = ((1, 0), (-1, 0), (0, 1), (0, -1))
+    changed = True
+    while changed:
+        changed = False
+        for y in range(size):
+            for x in range(size):
+                if free(g[y][x]) and sum(not free(get(x + a, y + b)) for a, b in N4) >= 3:
+                    g[y][x] = "T"
+                    changed = True
+    seen, best = set(), []
+    for y in range(size):
+        for x in range(size):
+            if free(g[y][x]) and (x, y) not in seen:
+                comp, st = [], [(x, y)]
+                seen.add((x, y))
+                while st:
+                    px_, py_ = st.pop()
+                    comp.append((px_, py_))
+                    for a, b in N4:
+                        q = ((px_ + a) % size, (py_ + b) % size)
+                        if q not in seen and free(g[q[1]][q[0]]):
+                            seen.add(q)
+                            st.append(q)
+                if len(comp) > len(best):
+                    best = comp
+    keep = set(best)
+    for y in range(size):
+        for x in range(size):
+            if free(g[y][x]) and (x, y) not in keep:
+                g[y][x] = "T"
+
+    rows = ["".join(r) for r in g]
+    blocked = {(x, y): ch for y, r in enumerate(rows) for x, ch in enumerate(r) if ch in "WTHD"}
+    return rows, blocked
+
+
+MAP_SEED = env_int("MAP_SEED", 7)
+MAP_ROWS, BLOCKED = build_map(W, MAP_SEED) if W >= 80 else ([], {})   # GAME_SIZE < 80: không có vật cản
+MAP_NAMES = {"W": "tường", "T": "cây", "H": "nhà", "D": "nhà"}
 
 app = Flask(__name__)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
@@ -441,7 +560,7 @@ def tdist(a, b):
 
 
 def occupied():
-    s = set()
+    s = set(BLOCKED)
     for p in players.values():
         if p.alive:
             s.update(p.snake)
@@ -470,14 +589,20 @@ def spawn_snake(p, now):
         cells = [((x - d[0] * k) % W, (y - d[1] * k) % W) for k in range(3)]
         if any(c in occ for c in cells):
             continue
+        if any(((cells[0][0] + d[0] * k) % W, (cells[0][1] + d[1] * k) % W) in BLOCKED for k in range(1, 9)):
+            continue   # trước mũi rắn phải thoáng ít nhất 8 ô
         if any(tdist(cells[0], h) < 6 for h in heads):
             continue
         chosen = (cells, d)
         break
     if chosen is None:
-        x, y = random.randrange(W), random.randrange(W)
-        d = random.choice(DIRS)
-        chosen = ([((x - d[0] * k) % W, (y - d[1] * k) % W) for k in range(3)], d)
+        for _ in range(3000):
+            x, y = random.randrange(W), random.randrange(W)
+            d = random.choice(DIRS)
+            cells = [((x - d[0] * k) % W, (y - d[1] * k) % W) for k in range(3)]
+            if not any(c in BLOCKED for c in cells):
+                break
+        chosen = (cells, d)
     p.snake, p.dir = chosen
     p.queue = []
     p.grow = 0
@@ -620,9 +745,12 @@ def cleanup(now):
 # =========================================
 # Một bước của trò chơi
 # =========================================
-def apply_hit(p, victims, now):
+def apply_hit(p, victims, now, wall=None):
     p.streak = 0
-    if victims:
+    if wall:
+        emit_to(p, "ev", {"t": "wall", "what": wall})
+        feed(f"{p.name} đụng {MAP_NAMES.get(wall, 'vật cản')}: -1 tim", "bad")
+    elif victims:
         pen = min(p.score, BITE_PENALTY)
         p.score -= pen
         names = ", ".join(sorted({players[v].name for v in victims if v in players}))
@@ -656,6 +784,14 @@ def game_tick(now, idle=False):
         else:
             p.snake.pop()
 
+    # 1b) đầu rắn chui vào tường / cây / nhà
+    wall_hit = {}
+    if BLOCKED:
+        for p in alive:
+            kind = BLOCKED.get(p.snake[0])
+            if kind:
+                wall_hit[p.id] = kind
+
     # 2) phát hiện va chạm (rắn đang "bất tử" không cắn được và không bị cắn)
     solid = [p for p in alive if p.protect_until <= now]
     occ = {}
@@ -674,8 +810,10 @@ def game_tick(now, idle=False):
                 victims.add(pid)
         if victims or selfhit:
             hits[p.id] = victims
+    for pid in wall_hit:
+        hits.setdefault(pid, set())
     for pid, victims in hits.items():
-        apply_hit(players[pid], victims, now)
+        apply_hit(players[pid], victims, now, wall_hit.get(pid))
 
     # 3) ăn đáp án / trái tim (ai tới trước thì ăn trước)
     eaters = [p for p in alive if p.alive and p.id not in hits]
@@ -839,7 +977,7 @@ def join_ack(p):
     return {
         "ok": True, "id": p.id, "name": p.name, "W": W, "tick": TICK_MS, "heartsMax": HEARTS_MAX,
         "hearts": p.hearts, "score": p.score, "dead": p.dead,
-        "best": best_all.get(p.key, [p.name, 0])[1], "ir": INTEREST_R,
+        "best": best_all.get(p.key, [p.name, 0])[1], "ir": INTEREST_R, "map": MAP_ROWS,
     }
 
 
@@ -977,7 +1115,7 @@ def on_spectate(_data=None):
                 le = dict(R["last_end"])
                 le["left"] = round(max(0.0, R["between_until"] - now), 1)
                 socketio.emit("round_end", le, to=sid)
-        return {"ok": True, "spec": True, "W": W, "tick": TICK_MS, "heartsMax": HEARTS_MAX, "ir": INTEREST_R}
+        return {"ok": True, "spec": True, "W": W, "tick": TICK_MS, "heartsMax": HEARTS_MAX, "ir": INTEREST_R, "map": MAP_ROWS}
 
 
 @socketio.on("unspectate")
