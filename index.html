@@ -66,6 +66,26 @@ button:focus-visible{outline:3px dashed var(--ink);outline-offset:3px}
   .ans b{width:34px;height:34px}
 }
 
+
+/* ---------- Điện thoại ngang: thu nhỏ để câu hỏi + đáp án không bị cắt ---------- */
+@media (orientation:landscape) and (max-height:520px){
+  #app{gap:4px;grid-template-rows:auto minmax(0,1fr) auto;grid-template-areas:"stage hud" "stage q" "stage pad"}
+  #hud{gap:4px}
+  #hearts{max-width:none}
+  .h{width:16px;height:16px}
+  .pill{padding:1px 6px;min-width:46px;border-width:2px;border-radius:10px;box-shadow:0 2px 0 var(--ink)}
+  .pill small{font-size:9px}.pill b{font-size:13px}
+  .ib{width:30px;height:30px;border-radius:9px;border-width:2px;box-shadow:0 2px 0 var(--ink)}
+  .ib svg{width:16px;height:16px}
+  #q{padding:5px 8px;border-width:2px;border-radius:12px;box-shadow:0 2px 0 var(--ink);overflow-y:auto}
+  #qtext{font-size:12px;line-height:1.25;margin:0 0 4px}
+  #answers{gap:3px;grid-template-columns:1fr}
+  .ans{font-size:12px;line-height:1.2;padding:2px 6px 2px 3px;gap:6px;border-width:1.5px;border-radius:8px}
+  .ans b{width:20px;height:20px;font-size:12px;border-radius:6px;border-width:1.5px}
+  #pad{grid-template-rows:repeat(2,38px);gap:4px;width:min(100%,190px)}
+  #pad button{border-width:2px;border-radius:10px;box-shadow:0 2px 0 var(--ink)}
+  #pad svg{width:22px;height:22px}
+}
 /* ---------- Board ---------- */
 #stage{grid-area:stage;position:relative;display:grid;place-items:center;min-height:0;min-width:0;padding:4px 6px 14px}
 #wrap{position:relative;border-radius:16px;box-shadow:0 0 0 3px var(--ink),0 8px 0 3px var(--ink);background:#f1f9ff}
