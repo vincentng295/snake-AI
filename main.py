@@ -1416,7 +1416,7 @@ def launch_cloudflared(bin_path):
     else:
         if TUNNEL_TOKEN or TUNNEL_HOST:
             print("[!] Thiếu TUNNEL_TOKEN hoặc TUNNEL_HOST - dùng domain tạm trycloudflare.com.")
-        cmd = [bin_path, "tunnel", "--no-autoupdate", "--url", f"http://{HOST}:{PORT}"]
+        cmd = [bin_path, "tunnel", "--protocol", "http2", "--no-autoupdate", "--url", f"http://{HOST}:{PORT}"]
     return subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                             text=True, encoding="utf-8", errors="replace")
 
